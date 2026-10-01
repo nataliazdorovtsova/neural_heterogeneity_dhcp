@@ -84,19 +84,24 @@ Things the activation scripts set, which matter:
 - **`JAX_ENABLE_X64=1`** — JAX defaults to float32, which is not good enough for
   Cholesky factors and log-determinants of the 270-dim covariance. Anything run
   without sourcing an activate script will silently be in single precision.
-- **`JAX_PLATFORMS=cpu`** — there are no GPUs on this cluster (37 nodes, 32 CPUs
-  and 250 GB each, no GRES, 7-day limit). Set explicitly so a wrong expectation
-  fails loudly instead of silently falling back.
+- **`JAX_PLATFORMS=cpu`** — there are no GPUs on this cluster. Confirmed:
+  `cluster2024` has one partition (`Main`), 37 nodes of 32 CPUs / 250 GB, a
+  7-day limit, `GresTypes = (null)`, no node advertising any GRES, and no
+  `/dev/nvidia*`. Set explicitly so a wrong expectation fails loudly instead of
+  silently falling back to CPU.
 - **thread count** — follows `SLURM_CPUS_PER_TASK` inside a job, defaults to 4
   outside one so interactive work does not take over a login node.
 
 ### Two environment gotchas on this system
 
-1. `~/.condarc` sets `ssl_verify: /etc/ssl/certs/ca-bundle.crt`, a RHEL path
-   that does not exist on these Ubuntu nodes, so **conda fails for any command
-   that hits the network**. `scripts/setup_env.sh` works around it with
-   `CONDA_SSL_VERIFY=/etc/ssl/certs/ca-certificates.crt` rather than editing the
-   global config. Worth fixing properly at some point.
+1. **conda's CA bundle.** The site-wide config at
+   `/imaging/local/software/miniconda/.condarc` (owned by IT, dated 2019) sets
+   `ssl_verify: /etc/ssl/certs/ca-bundle.crt` — a RHEL path. The nodes run
+   Ubuntu, where the bundle is `ca-certificates.crt`, so conda fails on every
+   command that touches the network. Fixed by a personal `~/.condarc` setting
+   `ssl_verify: true`, which makes conda use the CA bundle it ships with and
+   works on both OSes. User config takes precedence over the site file, so the
+   shared file is left alone. Don't hard-code either OS path.
 2. The system `python3` has no `pip` or `ensurepip`, so a plain venv is not an
    option — hence the conda bootstrap.
 
