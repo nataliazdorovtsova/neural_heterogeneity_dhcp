@@ -1,0 +1,35 @@
+# Core numerics
+numpy==2.1.3
+scipy==1.14.1
+pandas==2.2.3
+
+# Bayesian inference — CPU-only build (no GPUs on this cluster)
+jax==0.4.35
+jaxlib==0.4.35
+numpyro==0.15.3
+# NB: numpyro's discrete-latent *enumeration* needs funsor, which is broken
+# against jax >= 0.4.3x (typed PRNG keys). Do not add it. The cluster label is
+# marginalised explicitly with logsumexp instead -- faster, and it keeps
+# per-infant responsibilities available. See scripts/verify_env.py.
+arviz==0.20.0
+
+# Graph / connectome measures
+networkx==3.4.2
+bctpy==0.6.1
+
+# Neuroimaging I/O and brain maps
+nibabel==5.3.2
+nilearn==0.10.4
+
+# Model comparison / cross-validation utilities
+scikit-learn==1.5.2
+
+# Figures
+matplotlib==3.9.2
+seaborn==0.13.2
+
+# Notebooks and ergonomics
+ipykernel==6.29.5
+jupyterlab==4.3.1
+tqdm==4.67.1
+pyyaml==6.0.2

@@ -22,6 +22,8 @@ and communicability per AAL90 region.
 | Path | Contents |
 |---|---|
 | `paths.py` | pointers to every external input; import this rather than hard-coding paths |
+| `activate.sh` / `activate.csh` | enter the environment (bash / tcsh) |
+| `requirements.txt` | pinned package set |
 | `scripts/` | analysis code |
 | `data/` | symlinks to the read-only sources (see below) — nothing original here |
 | `results/` | fitted models, model-comparison tables, derived features |
@@ -61,3 +63,54 @@ QC for the thresholding variants is tabulated in
 - preprocessing: thresholded vs unthresholded, weighted vs binarised
 
 Selection is on held-out predictive performance throughout.
+
+## Environment
+
+```bash
+source activate.sh      # bash
+source activate.csh     # tcsh
+python scripts/verify_env.py
+```
+
+Python 3.12 conda prefix at `env/` (1.3 GB), inside the project rather than
+`~/.conda/envs`: it keeps the env with the code and off the 50 GB home quota.
+Rebuild from scratch with `rm -rf env && bash scripts/setup_env.sh`.
+
+Inference is **NumPyro / JAX**, with `arviz` for model comparison, `nilearn` +
+`nibabel` for brain maps, `networkx` + `bctpy` for graph measures.
+
+Things the activation scripts set, which matter:
+
+- **`JAX_ENABLE_X64=1`** — JAX defaults to float32, which is not good enough for
+  Cholesky factors and log-determinants of the 270-dim covariance. Anything run
+  without sourcing an activate script will silently be in single precision.
+- **`JAX_PLATFORMS=cpu`** — there are no GPUs on this cluster (37 nodes, 32 CPUs
+  and 250 GB each, no GRES, 7-day limit). Set explicitly so a wrong expectation
+  fails loudly instead of silently falling back.
+- **thread count** — follows `SLURM_CPUS_PER_TASK` inside a job, defaults to 4
+  outside one so interactive work does not take over a login node.
+
+### Two environment gotchas on this system
+
+1. `~/.condarc` sets `ssl_verify: /etc/ssl/certs/ca-bundle.crt`, a RHEL path
+   that does not exist on these Ubuntu nodes, so **conda fails for any command
+   that hits the network**. `scripts/setup_env.sh` works around it with
+   `CONDA_SSL_VERIFY=/etc/ssl/certs/ca-certificates.crt` rather than editing the
+   global config. Worth fixing properly at some point.
+2. The system `python3` has no `pip` or `ensurepip`, so a plain venv is not an
+   option — hence the conda bootstrap.
+
+### Mixture models: do not use enumeration
+
+NumPyro can enumerate discrete latents, but that path requires `funsor`, which
+is incompatible with jax >= 0.4.3x. Marginalise the cluster label explicitly:
+
+```python
+comp = dist.LowRankMultivariateNormal(mu[:, None, :], lam, psi)
+lp = comp.log_prob(y) + jnp.log(pi)[:, None]        # (K, N)
+numpyro.factor("lik", logsumexp(lp, axis=0).sum())
+```
+
+This is faster than enumeration, and per-infant responsibilities come back from
+the same `lp` as `exp(lp - logsumexp(lp, axis=0))`. `scripts/verify_env.py`
+checks this end to end against a known two-cluster synthetic.
