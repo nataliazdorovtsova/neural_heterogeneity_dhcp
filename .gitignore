@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+env/
+.venv/
+
+# derived outputs — regenerate from scripts/
+results/
+figures/
+
+# data/ is symlinks to ab15's tree; never commit the targets
+data/
