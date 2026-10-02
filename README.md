@@ -35,24 +35,35 @@ reproducible from `scripts/`.
 
 ## Data
 
-All inputs live in **`/imaging/astle/ab15/dHCP project`** (colleague's tree,
-treat as read-only) and are reached through symlinks in `data/`.
+All data is a **local copy** inside `data/`, owned by you (copied 2026-10-02
+from `/imaging/astle/ab15/Project 1`). Nothing reads from a colleague's folder,
+so their reorganising cannot break this project and we cannot touch their files.
+Sources, checksums and what was deliberately left behind: **`DATA_PROVENANCE.md`**.
 
-| Link | Target | What it is |
-|---|---|---|
-| `data/connectomes_perbin25_mst_n753` | `results/connectomes/perbin25_mst_n753_nbins10` | **primary stack.** `weighted_perbin_retain25_mst.npy`, float64 `(90, 90, 753)`. Per-bin top 25% by µ weight within each of 10 Euclidean distance bins, unioned with a max-weight MST backbone; original µ weights retained. Mean density 21.8%, 0 sessions with isolated nodes. |
-| `data/connectomes_unthresholded_n753` | `results/connectomes/unthresholded_n753` | `mu_unthresholded_stack.npy`, same shape, no thresholding. Mean density 85.4%. Useful as a preprocessing variant. |
-| `data/participants` | `data/participants` | `participants_with_index.csv` — `subject_index` aligns with axis 2 of the stacks. Also carries `scan_age` (PMA, weeks), `birth_age` (GA at birth, weeks), `sex`, `density`, `n_isolated_nodes`. Postnatal age = `scan_age − birth_age`. |
-| `data/behavior` | `data/behavior` | `demographics.csv` (887 rows; birth weight, head circumference, radiology score, full dMRI QC: motion, SNR, CNR, outlier slices), `cbcl_clean.csv` (742 rows, 18-month CBCL t-scores), `ecbq_clean.csv` (741 rows, ECBQ surgency / negative affect / effortful control) |
-| `data/atlases_templates` | `data/atlases_templates` | AAL90 neonatal atlas NIfTIs and registration outputs |
+| Path | What it is |
+|---|---|
+| `data/connectomes/perbin25_mst_n753/` | **primary stack.** `weighted_perbin_retain25_mst.npy`, float64 `(90, 90, 753)`. Per-bin top 25% by µ weight within each of 10 Euclidean distance bins, unioned with a max-weight MST backbone; original µ weights retained. Mean density 21.8%, 0 sessions with isolated nodes. Plus QC tables and figures. |
+| `data/connectomes/unthresholded_n753/` | `mu_unthresholded_stack.npy`, same shape, no thresholding. Mean density 85.4%. A preprocessing variant. |
+| `data/participants_index/` | `participants_with_index.csv` — `subject_index` aligns with axis 2 of the stacks. Carries `scan_age` (PMA, weeks), `birth_age` (GA at birth), `sex`, `density`. Postnatal age = `scan_age − birth_age`. A copy also sits beside each stack; prefer that one, since the index is specific to it. |
+| `data/behaviour_outcomes/` | `demographics.csv` (887 rows; birth weight, head circumference, radiology score, full dMRI QC), `cbcl_clean.csv` (742 rows, 18-month CBCL t-scores), `ecbq_clean.csv` (741 rows, ECBQ temperament) |
+| `data/descriptives/` | ab15's topology descriptives for this same stack — useful to cross-check our own feature extraction against |
+| `data/atlases/` | the 8 AAL90 / UNC neonatal atlas and template NIfTIs |
 
-A copy of `participants_with_index.csv` also sits inside each connectome
-directory; prefer the one next to the stack you are actually using, since the
-index is specific to it.
+Sample: **n = 753**, of which **276 preterm** (GA < 37) and **477 term**.
+PMA 26.7–45.1 weeks; postnatal age 0–19.7 weeks.
 
-QC for the thresholding variants is tabulated in
-`data/connectomes_perbin25_mst_n753/qc_summary_with_nbins.csv`, and ab15's own
-`PATH_MAP.md` / `METHODS_ANALYSIS.md` document how the stacks were built.
+Import paths from `paths.py` rather than hard-coding them.
+
+### Two things outstanding
+
+1. **Polygenic scores are missing.** Nothing matching `dhcp2026`, `polygenic`,
+   `pgs` or `prs` for dHCP exists anywhere on `/imaging` or `/home`. The PGS
+   data that is there belongs to ALSPAC and ABCD, not this cohort. Needs the
+   real path from ab15.
+2. **Five dead symlinks remain in `data/`** (`behavior`, `participants`,
+   `connectomes_*`, `atlases_templates`). They point at the pre-rename
+   `dHCP project` path, hold no data, and are superseded by the directories
+   above. Harmless; remove whenever convenient.
 
 ## Model variants to sweep
 
