@@ -1,0 +1,182 @@
+# Analysis decisions
+
+A running record of choices made, why, and what is still open. Newest section
+last. Numbers here were measured on the actual data, not assumed — the scripts
+that produced them are named alongside.
+
+---
+
+## D1. Data source — local copies, read-only genetics
+**2026-10-02, revised 2026-10-08**
+
+All connectome and behavioural data is a **local copy** under `data/`, taken
+from ab15's tree and verified byte-for-byte (`DATA_PROVENANCE.md`). Reason: she
+reorganises frequently — the symlinks this project started with broke within 24
+hours — and copying removes any chance of writing into her folder.
+
+**Polygenic scores are the exception: read in place, never copied.** They sit
+behind a restricted five-person access group. This project lives on
+`/imaging/astle`, readable by the whole lab group. Copying would widen access
+beyond who is authorised under the dHCP 2026 agreement. `paths.PRS` points at
+the controlled location.
+
+---
+
+## D2. Inference engine — NumPyro / JAX, explicit marginalisation
+**2026-10-01**
+
+CPU-only (no GPUs on this cluster: 37 nodes, 32 CPUs each, no GRES, 7-day limit).
+`JAX_ENABLE_X64=1` is mandatory — float32 is not adequate for Cholesky factors
+and log-determinants of a 270-dim covariance.
+
+The discrete cluster label is **marginalised explicitly with `logsumexp`**, not
+enumerated. NumPyro's enumeration requires `funsor`, which is broken against
+jax >= 0.4.3x. Explicit marginalisation is faster anyway and keeps per-infant
+responsibilities available as `exp(lp - logsumexp(lp, axis=0))`.
+
+---
+
+## D3. The sample is 753 SESSIONS from 670 INFANTS
+**2026-10-08**
+
+Verified: 753 rows, 670 unique `dhcp_id`, **83 repeat scans**. The methods
+supplement states "each of N infants contributes one usable connectome" — this
+is not true of the stack as delivered.
+
+**99% of repeat scans are preterm infants** (median gap 7.3 wk, max 16.7 wk) —
+scanned once early and again near term-equivalent age. So the dependence is
+confounded with the preterm contrast, which is the contrast most likely to drive
+group structure.
+
+| sample | n | corr(PMA, PNA) |
+|---|---|---|
+| all sessions | 753 | +0.164 |
+| **earliest scan per infant** | **670** | **+0.039** |
+| latest scan per infant | 670 | +0.233 |
+
+**Decision:** earliest scan per infant as primary (near-orthogonal clocks, clean
+independence, matches ab15's PLS-C selection); all 753 sessions as sensitivity.
+
+**Non-negotiable either way:** cross-validation and the held-out validation split
+must be grouped on `dhcp_id`, not on rows. Held-out predictive density is the
+sole basis for selecting K, q, covariance sharing, trajectory shape and clock —
+session-level splitting would inflate it and bias selection toward complexity,
+and nothing else in the design would catch it.
+
+---
+
+## D4. Density is confounded with age and preterm status
+**2026-10-08 — the most consequential finding so far**
+
+The per-bin 25% + MST rule takes the top 25% of each subject's **observed**
+edges. Since pre-threshold density falls steeply with PMA, that confound passes
+almost perfectly through:
+
+- `corr(retained edges, pre-threshold edges) = +0.999`
+- post-threshold density: mean 0.218, sd 0.013, **range 0.178–0.251**
+- `corr(density, PMA) = -0.669` (pre-threshold was -0.688 — barely reduced)
+- preterm 0.2249 vs term 0.2144, t = 11.6, p = 1.3e-28
+
+Effect on the three measures:
+
+| measure | r(age) | r(density) | r(age \| density) |
+|---|---|---|---|
+| strength | +0.891 | -0.734 | +0.770 |
+| **clustering** | **+0.133** | -0.418 | **-0.264** |
+| log-communicability | +0.067 | -0.036 | +0.059 |
+
+**Clustering's age trend reverses sign** once density is controlled. RQ1 would
+otherwise report the opposite of what the data support for segregation.
+
+**Decision:** request a fixed-density rebuild from ab15 — top 25% of *possible*
+connections within each distance bin (1001 edges for everyone), same Betzel
+bin logic, same MST union. Pending that, carry density as a covariate and treat
+any uncorrected age effect in clustering as unsafe.
+
+Rejected alternative: keep variable density and regress it out. At r = -0.669
+with PMA, that removes genuine age signal too.
+
+NB: the `density` column in `participants_with_index.csv` is the **pre**-threshold
+figure (0.854). Post-threshold density must be computed from the stack.
+
+---
+
+## D5. Regional measures — definitions fixed here
+**2026-10-08**
+
+ab15's topology numbers were computed for a previous project and are not
+authoritative (confirmed by her). We compute our own and pin the definitions:
+
+- **Strength** — weighted row sum. (Her `localmean_degree` is also weighted
+  strength, not binary degree; they coincide at 17.7.)
+- **Clustering** — NetworkX weighted = **Onnela**, normalised by the
+  **per-subject** maximum weight. Scale-free, unlike Barrat.
+- **Communicability** — `expm(D^-1/2 W D^-1/2)` (Crofts & Higham), regional mean
+  **excluding the diagonal**, then **log**-transformed.
+
+The normalisation is not optional. `expm` on raw µ weights is dominated by
+exp(λ_max): ab15's `localmean_sub_centrality` has mean 1.15e9, sd 4.1e9, max
+6.3e10 — four orders of magnitude, unusable per-subject. Normalised, max is 1.24.
+
+**Add Crofts & Higham (2009) to the reference list.**
+
+---
+
+## D6. Coordinates WILL be standardised
+**2026-10-08 — overrides the methods supplement**
+
+§1 says "I will not standardise the coordinates across measures", on the grounds
+that factor analysis estimates a separate residual variance per coordinate. That
+is correct **for the likelihood** and false for everything we report. Measured:
+
+| measure | mean | sd |
+|---|---|---|
+| strength | 17.49 | 10.61 |
+| clustering | 0.0189 | 0.0124 |
+| log-communicability | -4.16 | 0.359 |
+
+**Variance ratio strength : clustering = 733,000 : 1.**
+
+Consequences if left unstandardised: "each measure averaged across regions" and
+the group-ordering rule are numerically pure strength; eigenvectors of C_k are
+not scale-invariant, so the leading axis is the strength block and the
+segregation/integration contrast the study hopes to find cannot emerge; the
+shared-λ smoothness variant is not scale-invariant; and PCA initialisation of
+the loadings becomes a strength detector.
+
+**Decision:** z-score each of the 270 coordinates using **training-fold moments
+only**. Also makes the ψ-scaling of the spline penalty (raised in review) far less
+damaging, since residual variances become comparable across coordinates.
+
+---
+
+## D7. Edge weights are not streamline counts
+**2026-10-08**
+
+Edge weight = Σ SIFT2 streamline weights × participant-specific µ = relative
+fibre-bundle capacity. The proposal's Data section says "streamline-count
+matrices" and **must be corrected**.
+
+---
+
+## Open — needs a decision or an answer
+- **Fixed-density rebuild** (D4) — asked, awaiting ab15.
+- **Ancestry principal components** for any PRS analysis — not in
+  `dhcp_prs_all.csv`, not found under `genetics_qc/` or `3_Genomics/`. May need
+  computing from `genetics_qc/plink/dhcp_imputed/`. Without them, PRS
+  associations are open to population stratification.
+- **Motion / QC exclusion rule** — metrics available (`qc_dmri_eddy_rel_motion`
+  median 1.58 / p95 4.49 / max 26.5; `percent_outlier_slices`; `radiology_score`).
+  No rule chosen yet. ab15 applied none beyond the documented cascade.
+- **Knot span** — observed PMA is 26.71–45.14; the proposed 26–45 basis
+  extrapolates for 2 infants. Widen to 26.5–45.5.
+- **Basis size M** — M = 8 is small for a true P-spline (Eilers–Marx assume a
+  generous basis with the penalty doing the work). Either raise to ~15–20 or
+  stop calling it a P-spline.
+- **Reference age** for the both-clocks model (raised in review) — "centre at 40 wk
+  PMA" is underdetermined; need a profile, e.g. PMA 40 / GA 40 / PNA 0.
+- **Group ordering statistic** — ordering by mean-across-coordinates is
+  scale-dominated. Use mixing proportion π instead.
+- **Stability design** (raised in review) — ARI needs partitions of the same
+  infants; parametric bootstrap generates new ones. Assign the original infants
+  to each bootstrap-fitted model by responsibility instead.

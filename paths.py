@@ -42,3 +42,19 @@ DESCRIPTIVES_SUBJECTS = DATA / "descriptives" / "combined_df_dhcp_with_ids.csv"
 # --- atlases and templates ---------------------------------------------------
 ATLAS_DIR = DATA / "atlases"
 AAL90 = ATLAS_DIR / "AAL90_in_GA40.nii.gz"
+
+# --- polygenic scores: READ IN PLACE, DO NOT COPY ---------------------------
+# These live behind a restricted five-person access group
+# (nz01, ab15, da02, fp02, yh03). This project sits on /imaging/astle, readable
+# by the whole cbsu-fs-astle-lab group, which is far wider. Copying genotype-
+# derived data across that boundary would widen access beyond who is authorised
+# under the dHCP 2026 agreement. Read from these paths; do not mirror them into
+# data/. See DECISIONS.md.
+DHCP2026 = Path("/imaging/projects/external/dHCP_2026")
+PRS = DHCP2026 / "data" / "genetics_qc" / "prs" / "dhcp_prs_all.csv"
+
+# Wider dHCP 2026 release, also read-in-place: participant enrolment, imaging,
+# genomics (incl. methylation), 18-month follow-up at source (CBCL + ECBQ,
+# possibly more complete than the cleaned copies in data/behaviour_outcomes),
+# eye tracking, clinical details.
+DHCP2026_DATA = DHCP2026 / "data"

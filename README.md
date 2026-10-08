@@ -28,7 +28,10 @@ and communicability per AAL90 region.
 | `data/` | symlinks to the read-only sources (see below) — nothing original here |
 | `results/` | fitted models, model-comparison tables, derived features |
 | `figures/` | figures |
-| `notes/` | proposal, methods supplement, working notes |
+| `notes/` | transcriptions of the proposal, methods supplement and ab15's first year report |
+| `DECISIONS.md` | running record of analysis choices and why — read this first |
+| `ANALYSIS_PLAN.md` | staged plan, with gates between stages |
+| `DATA_PROVENANCE.md` | where the data came from, with checksums |
 
 `results/`, `figures/` and `data/` are gitignored; everything in them should be
 reproducible from `scripts/`.
@@ -54,16 +57,26 @@ PMA 26.7–45.1 weeks; postnatal age 0–19.7 weeks.
 
 Import paths from `paths.py` rather than hard-coding them.
 
-### Two things outstanding
+### Polygenic scores — read in place, never copied
 
-1. **Polygenic scores are missing.** Nothing matching `dhcp2026`, `polygenic`,
-   `pgs` or `prs` for dHCP exists anywhere on `/imaging` or `/home`. The PGS
-   data that is there belongs to ALSPAC and ABCD, not this cohort. Needs the
-   real path from ab15.
-2. **Five dead symlinks remain in `data/`** (`behavior`, `participants`,
-   `connectomes_*`, `atlases_templates`). They point at the pre-rename
-   `dHCP project` path, hold no data, and are superseded by the directories
-   above. Harmless; remove whenever convenient.
+`paths.PRS` → `/imaging/projects/external/dHCP_2026/data/genetics_qc/prs/dhcp_prs_all.csv`
+
+569 infants × 48 scores, no missing values; IDs match `dhcp_id` directly. **415
+of our 670 infants have them; 341 have both PGS and CBCL.** Coverage is balanced
+on preterm status (63% vs 61%).
+
+These sit behind a restricted five-person access group, while
+this project is readable by the whole lab group. **Do not copy them into
+`data/`** — that would widen access beyond who is authorised. See `DECISIONS.md`
+D1. Ancestry principal components are not in the file and still need locating
+before any PRS association is run.
+
+### Also outstanding
+
+- **Density is confounded with age and preterm status** (`DECISIONS.md` D4) —
+  the most consequential open item. A fixed-density rebuild has been requested.
+- **Five dead symlinks remain in `data/`**, pointing at the pre-rename
+  `dHCP project` path. No data, superseded, harmless.
 
 ## Model variants to sweep
 
