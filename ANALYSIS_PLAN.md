@@ -10,8 +10,9 @@ are transcribed in `notes/`.
 
 | Item | Needed for | Status |
 |---|---|---|
-| Fixed-density rebuild of the stack (D4) | Stage 2 onward | asked ab15 |
-| Ancestry principal components | Stage 7 PRS only | not located |
+| Fixed-density rebuild of the stack (D4) | Stage 2 onward | asked ab15 — **the only open blocker** |
+| ~~Ancestry principal components~~ | ~~Stage 7~~ | **resolved** — `paths.ANCESTRY_PCS` (D9) |
+| ~~Motion exclusion rule~~ | ~~Stage 1~~ | **resolved** — none needed (D8) |
 
 Neither blocks Stages 1–6. Build on the current stack, carry density as a
 covariate, and re-run when the rebuild lands — the pipeline should take the
@@ -23,11 +24,10 @@ stack as a parameter so this is a re-run, not a rewrite.
 
 1. **Define the cohort.** Earliest scan per `dhcp_id` → 670 infants (D3). Keep
    the 753-session version alongside as the sensitivity cohort.
-2. **Choose and apply the motion rule.** Candidates in `demographics.csv`:
-   `qc_dmri_eddy_rel_motion` (median 1.58, p95 4.49, max 26.5),
-   `qc_dmri_eddy_percent_outlier_slices`, `radiology_score`. Baum et al. (2018)
-   is already in the reference list and supports motion-based exclusion.
-   **Report the age and preterm distribution of exclusions**, per §1.
+2. **No motion exclusions** (D8). Motion was handled at source and the dHCP QC
+   gate already removed 129 of 887 sessions. Carry `qc_dmri_eddy_rel_motion`
+   through as a covariate for the Stage 6 artefact check, not as a filter.
+   The exclusion cascade to report is therefore ab15's, not ours.
 3. **Freeze the validation split.** 15% (~100 infants), stratified by PMA band
    and preterm status, **grouped on `dhcp_id`**. Write it to
    `results/cohort/validation_split.csv` and never regenerate it.
@@ -118,11 +118,14 @@ computed two independent ways agrees.
     bootstrap-fitted model by responsibility, then compare partitions. For
     K-recovery, rerun *selection* on ~50 replicates — refitting at fixed K
     cannot test it.
-21. **Order groups by mixing proportion π**, not by mean-across-coordinates
+21. **Motion artefact check** (D8): correlate each infant's position along each
+    axis of Cₖ with residual motion. An axis tracking motion is scan quality,
+    not biology — log-communicability carries r ≈ −0.24 with motion net of age.
+22. **Order groups by mixing proportion π**, not by mean-across-coordinates
     (scale-dominated, D6).
-22. **Reference profile** for centres under the postnatal/both-clock models
+23. **Reference profile** for centres under the postnatal/both-clock models
     (raised in review): PMA 40 / GA 40 / PNA 0.
-23. Report trajectories at three levels, axes as brain maps with variance
+24. Report trajectories at three levels, axes as brain maps with variance
     shares, group differences against age.
 
 ---

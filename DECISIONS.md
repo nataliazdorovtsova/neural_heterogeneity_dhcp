@@ -159,15 +159,75 @@ matrices" and **must be corrected**.
 
 ---
 
+## D8. No additional motion exclusions — but motion is a reporting diagnostic
+**2026-10-08 (ab15 confirmed the preprocessing)**
+
+Motion was corrected at source (SHARD, Christiaens et al. 2021) and the dHCP QC
+gate already removed 129 of 887 sessions on dMRI quality. ab15 confirms no
+further exclusions are needed. **Agreed — we add none.**
+
+Checked rather than assumed. Residual `qc_dmri_eddy_rel_motion` on our sessions
+(745 of 753 have a QC row): median 1.56, p95 3.94, max 16.3.
+
+| | r |
+|---|---|
+| motion vs PMA | −0.141 |
+| motion vs GA at birth | −0.173 |
+| preterm vs term (median) | 1.61 vs 1.52 |
+
+Motion is **not** meaningfully confounded with age or preterm status — unlike
+density (D4) — so it cannot masquerade as a developmental or group effect. That
+is the reassurance that makes "no exclusions" safe.
+
+But it is not inert:
+
+| measure | r(motion) | r(motion \| age) |
+|---|---|---|
+| strength | −0.143 | +0.046 |
+| clustering | +0.099 | +0.121 |
+| **log-communicability** | **−0.266** | **−0.242** |
+
+An association of ≈ −0.24 with log-communicability survives age adjustment. This
+matters specifically for RQ2, which *is* the characterisation of between-infant
+variation: a nuisance axis driven by scan quality could surface as one of the
+recovered directions of variation.
+
+**Decision:** no exclusions; instead, after fitting, correlate each infant's
+position along each axis of Cₖ with residual motion. An axis that tracks motion
+is an artefact, not biology. Same logic as the preterm-ARI diagnostic (Stage 5).
+
+---
+
+## D9. Ancestry PCs found — and the PRS are already EUR-restricted
+**2026-10-08**
+
+`paths.ANCESTRY_PCS` → `genetics_qc/plink/dhcp_imputed/dhcp.hg19.EUR.eigenvec`
+(not in `prs/`, which is why the first search missed them). 50 PCs.
+
+Two sets exist, and the distinction matters:
+
+| file | n |
+|---|---|
+| `dhcp.hg19.eigenvec` (all genotyped) | 766 |
+| `dhcp.hg19.EUR.eigenvec` | **569** |
+| `dhcp_prs_all.csv` | **569** |
+
+The PRS row count matches the EUR eigenvec exactly, so **the scores were
+computed only for the European-ancestry subset**. Use the EUR PCs; they are the
+ones that correspond to the PRS sample.
+
+No further attrition: **all 415** of our PRS infants have PCs, and 341 have PRS
++ PCs + CBCL. Convention is the first 5–10 PCs as covariates (PC1–5 carry 21.9%
+of genotypic variance, PC1–10 31.7%).
+
+**Caveat to state in any write-up:** the genetics arm covers 415 of 670 infants
+(62%), and the restriction is *by ancestry*. Whatever we find genetically does
+not automatically generalise to the full cohort.
+
+---
+
 ## Open — needs a decision or an answer
 - **Fixed-density rebuild** (D4) — asked, awaiting ab15.
-- **Ancestry principal components** for any PRS analysis — not in
-  `dhcp_prs_all.csv`, not found under `genetics_qc/` or `3_Genomics/`. May need
-  computing from `genetics_qc/plink/dhcp_imputed/`. Without them, PRS
-  associations are open to population stratification.
-- **Motion / QC exclusion rule** — metrics available (`qc_dmri_eddy_rel_motion`
-  median 1.58 / p95 4.49 / max 26.5; `percent_outlier_slices`; `radiology_score`).
-  No rule chosen yet. ab15 applied none beyond the documented cascade.
 - **Knot span** — observed PMA is 26.71–45.14; the proposed 26–45 basis
   extrapolates for 2 infants. Widen to 26.5–45.5.
 - **Basis size M** — M = 8 is small for a true P-spline (Eilers–Marx assume a

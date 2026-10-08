@@ -58,3 +58,12 @@ PRS = DHCP2026 / "data" / "genetics_qc" / "prs" / "dhcp_prs_all.csv"
 # possibly more complete than the cleaned copies in data/behaviour_outcomes),
 # eye tracking, clinical details.
 DHCP2026_DATA = DHCP2026 / "data"
+
+# Ancestry principal components, same controlled area — READ IN PLACE.
+# Two sets exist. dhcp_prs_all.csv has exactly 569 rows and the EUR eigenvec has
+# exactly 569 individuals: the PRS are already restricted to the
+# European-ancestry subset, so the EUR PCs are the ones that match them.
+_PLINK = DHCP2026_DATA / "genetics_qc" / "plink" / "dhcp_imputed"
+ANCESTRY_PCS = _PLINK / "dhcp.hg19.EUR.eigenvec"       # use with PRS (n=569)
+ANCESTRY_PCS_ALL = _PLINK / "dhcp.hg19.eigenvec"       # all genotyped (n=766)
+ANCESTRY_EIGENVAL = _PLINK / "dhcp.hg19.eigenval"
