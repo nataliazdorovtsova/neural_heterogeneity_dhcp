@@ -8,5 +8,9 @@ env/
 results/
 figures/
 
+# ...except the frozen splits, which must never silently change
+!results/cohort/
+!results/cohort/**
+
 # data/ is symlinks to ab15's tree; never commit the targets
 data/

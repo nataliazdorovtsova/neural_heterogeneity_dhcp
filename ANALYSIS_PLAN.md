@@ -20,7 +20,7 @@ stack as a parameter so this is a re-run, not a rewrite.
 
 ---
 
-## Stage 1 — Cohort and the frozen split
+## Stage 1 — Cohort and the frozen split  ✅ DONE
 
 1. **Define the cohort.** Earliest scan per `dhcp_id` → 670 infants (D3). Keep
    the 753-session version alongside as the sensitivity cohort.
@@ -37,12 +37,13 @@ stack as a parameter so this is a re-run, not a rewrite.
 **Deliverable:** `scripts/build_cohort.py` → a cohort table with the exclusion
 cascade, plus the frozen split and fold assignments.
 
-**Gate:** exclusions must not be strongly age-dependent; splits must contain no
-`dhcp_id` in more than one fold.
+**Gate — passed.** 670 primary infants, 101 validation / 569 in 5 folds. No
+`dhcp_id` spans two folds or two splits. Validation vs training PMA KS p = 0.98,
+so the hold-out is not age-biased. Stack indices verified aligned.
 
 ---
 
-## Stage 2 — Features
+## Stage 2 — Features  ✅ DONE
 
 5. **Compute the 90 × 3 tables** (D5): strength; Onnela clustering, per-subject
    normalisation; log of degree-normalised communicability, diagonal excluded.
@@ -54,17 +55,18 @@ cascade, plus the frozen split and fold assignments.
 **Deliverable:** `scripts/extract_features.py` → `(n, 90, 3)` arrays per variant,
 plus the standardisation moments.
 
-**Gate:** log-communicability residuals adequately symmetric (§1 asks for this);
-no coordinate with zero variance; feature matrices align with the cohort table
-by `dhcp_id`.
+**Gate — passed, with one correction.** Zero coordinates have zero variance;
+all features finite and aligned. The symmetry check caught that the log was on
+the wrong measure — see D10. Our vectorised Onnela clustering is verified
+identical to networkx. Post-correction median |skew| is 0.25 / 0.25 / 0.43.
 
 ---
 
 ## Stage 3 — Exploration, training set only
 
-8. Pairwise correlations among the three measures across regions — **in
-   particular strength vs communicability**, which degree normalisation couples.
-   If near-collinear, two of the three measures are one measure.
+8. ~~Pairwise correlations among the three measures~~ — **done early as a Stage 2
+   gate (D11)**: strength vs communicability median r = +0.595, the other pairs
+   near zero. Not redundant; proceed.
 9. Marginal distributions; low-dimensional projection coloured by PMA and by
    preterm status.
 10. **Density sensitivity**: recompute 8–9 with density regressed out, and

@@ -226,8 +226,64 @@ not automatically generalise to the full cohort.
 
 ---
 
+## D10. The log belongs on clustering, not communicability
+**2026-10-08 — overrides the methods supplement, measured on the training set**
+
+§1 says: "I will log-transform communicability because its raw distribution is
+strongly right-skewed." On this data, after the degree normalisation of D5, that
+is backwards. Median |skew| across the 90 regions, 569 training infants:
+
+| coordinate | median \|skew\| |
+|---|---|
+| communicability, raw | **0.41** |
+| communicability, logged | 0.67 — the log makes it *worse* |
+| strength, raw | 0.26 |
+| **clustering, raw** | **1.51** — 33 of 90 regions exceed \|skew\| 2 |
+| clustering, logged | **0.24** |
+
+The supplement's reasoning was sound for *unnormalised* communicability, which
+is dominated by exp(λ_max) and wildly skewed. Adopting Crofts & Higham
+normalisation (D5) removes the premise: the normalised measure is bounded and
+already symmetric.
+
+**Decision:** communicability enters raw; clustering enters as
+`log(c + 1e-4)`. The offset sits below the smallest observed nonzero (4.6e-4),
+so real values are undistorted, and it keeps the 62 exact zeros (0.12% of
+values) finite. Resulting median |skew| is 0.25 / 0.25 / 0.43 across the three
+measures, against 0.25 / 1.61 / 0.68 before.
+
+Both transforms remain switchable in `features.regional_features()`, so the
+supplement's original choice is one flag away.
+
+**Flag for sign-off:** this changes two documented methods decisions. The
+evidence is in `results/features/` and reproducible from
+`scripts/extract_features.py`.
+
+---
+
+## D11. The three measures are not redundant — gate passed
+**2026-10-08**
+
+Degree-normalising communicability builds strength into it, so there was a real
+risk that two of the three measures were one measure. Checked on the training
+set, across-infant correlation per region:
+
+| pair | median r | IQR |
+|---|---|---|
+| strength vs communicability | +0.595 | [+0.39, +0.74] |
+| strength vs clustering | +0.066 | [-0.04, +0.18] |
+| clustering vs communicability | -0.029 | [-0.19, +0.15] |
+
+Strength and communicability share moderate variance but are far from
+collinear; at the global-mean level r is only +0.29. Clustering is close to
+orthogonal to both. **Three genuinely complementary measures — proceed as
+specified.**
+
+---
+
 ## Open — needs a decision or an answer
 - **Fixed-density rebuild** (D4) — asked, awaiting ab15.
+- **Sign-off on D10** (log on clustering rather than communicability).
 - **Knot span** — observed PMA is 26.71–45.14; the proposed 26–45 basis
   extrapolates for 2 infants. Widen to 26.5–45.5.
 - **Basis size M** — M = 8 is small for a true P-spline (Eilers–Marx assume a
