@@ -81,9 +81,9 @@ identical to networkx. Post-correction median |skew| is 0.25 / 0.25 / 0.43.
 11. **Implement the mixture of factor analysers with P-spline centres.** See the
     note on EM below. Woodbury and the determinant lemma throughout, so
     covariance work stays at q × q.
-12. **Fix the basis**: knots spanning **26.5–45.5** weeks (observed range is
-    26.71–45.14, so 26–45 extrapolates). Raise M from 8 to ~15–20 if we want a
-    genuine P-spline, or document it as a regression spline.
+12. **Basis fixed: M = 20**, knots spanning **26.5–45.5** weeks (observed range
+    is 26.71–45.14, so 26–45 extrapolates), λ estimated per coordinate.
+    Evidence in `SUPPLEMENT.md` S8.
 13. **Get the penalty scaling right** (raised in review): the λD₂ᵀD₂ term must carry the ψ_kd
     factor. Standardisation (D6) reduces the damage if this is wrong, but it
     should be right.
@@ -98,7 +98,9 @@ computed two independent ways agrees.
 ## Stage 5 — Selection
 
 15. **Greedy search**, ~32 specifications in the five documented steps, scored by
-    held-out log predictive density under the frozen folds.
+    held-out log predictive density under the frozen folds. Submitted as **one
+    array task per specification** (32 tasks, 4 concurrent), not one job per
+    fit — see `CLUSTER.md`.
 16. **Preterm diagnostic at every K**: adjusted Rand index between the fitted
     partition and preterm status. If K = 2 simply recovers preterm/term, that is
     a replication of Mousley et al. (2025), not a finding — say so, and ask

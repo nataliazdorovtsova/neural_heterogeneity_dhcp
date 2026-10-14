@@ -14,3 +14,6 @@ figures/
 
 # data/ is symlinks to ab15's tree; never commit the targets
 data/
+
+# slurm logs
+logs/

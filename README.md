@@ -30,6 +30,8 @@ and communicability per AAL90 region.
 | `figures/` | figures |
 | `notes/` | transcriptions of the proposal, methods supplement and ab15's first year report |
 | `DECISIONS.md` | running record of analysis choices and why — read this first |
+| `SUPPLEMENT.md` | the evidence behind each choice, write-up ready |
+| `CLUSTER.md` | SLURM conventions and how we stay neighbourly |
 | `ANALYSIS_PLAN.md` | staged plan, with gates between stages |
 | `DATA_PROVENANCE.md` | where the data came from, with checksums |
 

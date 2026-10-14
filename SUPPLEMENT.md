@@ -1,0 +1,384 @@
+# Methodological supplement — empirical justification
+
+Every methodological choice in this project that was settled by looking at the
+data rather than by convention, with the numbers behind it. Written to be lifted
+into a paper supplement.
+
+`DECISIONS.md` records *what* we decided. This records *why*, with evidence.
+Sections are appended as decisions are made; numbers are never edited in place —
+if something is superseded, the old entry is marked and the new one appended.
+
+Unless stated otherwise, statistics are computed on the **training set only**
+(569 infants, earliest scan each) to avoid informing choices with held-out data.
+
+**Contents**
+
+| § | Topic | Settles |
+|---|---|---|
+| S1 | Sample structure: sessions vs infants | split grouping, cohort definition |
+| S2 | Density is confounded with age and preterm status | thresholding, covariates |
+| S3 | The matrix exponential needs degree normalisation | communicability definition |
+| S4 | Measures differ in scale by five orders of magnitude | standardisation |
+| S5 | Which measure needs the log transform | transforms |
+| S6 | The three measures are not redundant | measure set |
+| S7 | Residual motion is not a design confound | exclusions |
+| S8 | Spline basis size M | M = 20 |
+| S9 | Cohort and frozen splits | split validity |
+| S10 | Genetic data coverage | extension sample |
+
+---
+
+## S1 Sample structure: 753 sessions from 670 infants
+
+*Produced by: `scripts/build_cohort.py`. Settles DECISIONS.md D3.*
+
+The delivered stack contains **753 sessions from 670 unique infants — 83 repeat
+scans**. The methods supplement's premise that "each of N infants contributes
+one usable connectome" does not hold as delivered.
+
+The repeats are not random: **82 of 83 repeat sessions (99%) are preterm
+infants**, scanned once early and again near term-equivalent age (median gap
+7.3 weeks, maximum 16.7). Within-infant dependence is therefore almost entirely
+confined to the preterm group — the same contrast most likely to drive cluster
+structure.
+
+Deduplication also affects whether the two developmental clocks are separable:
+
+| cohort | n | corr(PMA, PNA) |
+|---|---|---|
+| all sessions | 753 | +0.164 |
+| **earliest scan per infant** | **670** | **+0.039** |
+| latest scan per infant | 670 | +0.233 |
+
+The earliest-scan cohort gives near-orthogonal clocks, so postmenstrual and
+postnatal age contributions are separately identifiable. This is the primary
+cohort; all 753 sessions are retained as a sensitivity analysis.
+
+**Consequence for inference.** Cross-validation folds and the held-out
+validation split are assigned at infant level on `dhcp_id`. Because held-out
+predictive density is the sole criterion for selecting K, q, covariance sharing,
+trajectory shape and developmental clock, session-level splitting would place
+repeat scans of one infant in both training and test, inflating the score and
+biasing selection toward more complex models.
+
+---
+
+## S2 Density is confounded with age and preterm status
+
+*Produced by ad-hoc analysis, 2026-10-08. Settles DECISIONS.md D4. **Open: a
+fixed-density rebuild has been requested.***
+
+The thresholding rule (per-bin top 25% + MST, Betzel distance bins) retains the
+top 25% of each subject's **observed** edges. Pre-threshold density declines
+steeply with age, and that confound passes through almost unchanged:
+
+- `corr(retained edges, pre-threshold edges) = +0.999`
+- post-threshold density: mean 0.218, SD 0.013, **range 0.178–0.251**
+- `corr(density, PMA) = −0.669` (pre-threshold: −0.688)
+- preterm 0.2249 vs term 0.2144, t = 11.57, p = 1.3 × 10⁻²⁸
+
+Taking 25% of *possible* rather than observed connections within each bin would
+retain 1001 edges for every subject, fixing density by construction.
+
+Effect on the three regional measures (150 sessions):
+
+| measure | r(age) | r(density) | r(age \| density) |
+|---|---|---|---|
+| strength | +0.891 | −0.734 | +0.770 |
+| **clustering** | **+0.133** | −0.418 | **−0.264** |
+| log-communicability | +0.067 | −0.036 | +0.059 |
+
+**The age trend in clustering reverses sign once density is controlled.**
+Uncorrected, segregation appears to increase mildly across the perinatal period;
+net of density it decreases. Any developmental claim about clustering is unsafe
+until density is fixed or adjusted.
+
+Note: the `density` column distributed with the participants file is the
+*pre*-threshold figure (mean 0.854). Post-threshold density must be computed
+from the stack.
+
+---
+
+## S3 The matrix exponential requires degree normalisation
+
+*Settles DECISIONS.md D5.*
+
+The methods supplement defines pairwise communicability as an entry of the
+matrix exponential of the adjacency matrix, without normalisation. Applied to
+µ-weighted matrices the result is dominated by exp(λ_max):
+
+| | max value |
+|---|---|
+| `expm(W)`, thresholded stack | 4.95 × 10⁷ |
+| `expm(W)`, unthresholded stack | 3.56 × 10⁸ |
+| `expm(D^−1/2 W D^−1/2)` | **1.24** |
+
+Independent confirmation comes from ab15's own earlier topology run, which
+computed subgraph centrality — the diagonal of `expm(A)` — on raw weights:
+mean 1.15 × 10⁹, SD 4.14 × 10⁹, maximum 6.32 × 10¹⁰. A standard deviation 3.6
+times the mean, spanning four orders of magnitude, is not a usable per-subject
+feature.
+
+We therefore use the degree-normalised form (Crofts & Higham, 2009), taking the
+regional mean over off-diagonal entries only, since self-communicability
+dominates the row mean. **Crofts & Higham should be added to the reference
+list.**
+
+---
+
+## S4 The measures differ in scale by five orders of magnitude
+
+*Settles DECISIONS.md D6, overriding the methods supplement.*
+
+Measured on 100 infants, before any transform:
+
+| measure | mean | SD |
+|---|---|---|
+| strength | 17.49 | 10.61 |
+| clustering | 0.0189 | 0.0124 |
+| log-communicability | −4.16 | 0.359 |
+
+**Variance ratio, strength to clustering: 733,000 : 1.**
+
+The supplement declines to standardise on the grounds that factor analysis
+estimates a separate residual variance per coordinate. That argument holds for
+the *likelihood* but not for the reported quantities:
+
+- "each measure averaged across regions", and the group-ordering rule at 40
+  weeks, are numerically dominated by strength alone;
+- eigenvectors of Cₖ are not scale-invariant, so the leading axis of within-group
+  variation would be essentially the strength block — the segregation/integration
+  contrast the study sets out to find could not emerge;
+- the shared-precision smoothness variant is not scale-invariant;
+- initialising loadings from principal components of unstandardised residuals
+  makes the initialisation a strength detector.
+
+Each of the 270 coordinates is therefore z-scored using **training-fold moments
+only**. This also reduces the consequences of misplacing the ψ factor in the
+penalised spline solve (raised in review), since residual variances become
+comparable across coordinates.
+
+---
+
+## S5 The log belongs on clustering, not communicability
+
+*Produced by: `scripts/extract_features.py`. Settles DECISIONS.md D10,
+overriding the methods supplement.*
+
+The supplement log-transforms communicability "because its raw distribution is
+strongly right-skewed", and leaves clustering untransformed. After adopting
+degree normalisation (S3) this is the wrong way round. Median |skew| across the
+90 regions, 569 training infants:
+
+| coordinate | median \|skew\| |
+|---|---|
+| communicability, raw | **0.41** |
+| communicability, log-transformed | 0.67 *(the transform makes it worse)* |
+| strength, raw | 0.26 |
+| **clustering, raw** | **1.51** — 33 of 90 regions exceed \|skew\| 2 |
+| clustering, log-transformed | **0.24** |
+
+The supplement's reasoning was sound for *unnormalised* communicability (S3).
+Normalisation bounds the measure and removes the skew, eliminating the premise.
+
+**Adopted:** communicability enters untransformed; clustering enters as
+log(c + 10⁻⁴). The offset lies below the smallest observed non-zero value
+(4.6 × 10⁻⁴), leaving real values undistorted while keeping the 62 exact zeros
+(0.12% of values) finite. The offset was chosen from a sweep over 10⁻⁶ to 10⁻³,
+across which skew varied only between 0.26 and 0.28.
+
+Resulting median |skew| on the training set:
+
+| | strength | clustering | communicability |
+|---|---|---|---|
+| as specified in the supplement | 0.26 | 1.51 | 0.67 |
+| **as adopted** | **0.26** | **0.28** | **0.41** |
+
+Both transforms remain switchable in `features.regional_features()`.
+
+---
+
+## S6 The three measures are not redundant
+
+*Settles DECISIONS.md D11.*
+
+Degree-normalising communicability (S3) incorporates strength into it, raising
+the possibility that two of the three measures carry the same information.
+Across-infant correlation computed separately within each of the 90 regions,
+training set:
+
+| pair | median r | IQR |
+|---|---|---|
+| strength vs communicability | +0.595 | [+0.39, +0.74] |
+| strength vs clustering | +0.066 | [−0.04, +0.18] |
+| clustering vs communicability | −0.029 | [−0.19, +0.15] |
+
+At the level of region-averaged means, r(strength, communicability) = +0.29.
+Strength and communicability share moderate variance without approaching
+collinearity; clustering is close to orthogonal to both. The three-measure
+specification is retained.
+
+---
+
+## S7 Residual motion is not a design confound
+
+*Settles DECISIONS.md D8.*
+
+Motion was corrected at acquisition and reconstruction (SHARD; Christiaens et
+al., 2021) and the dHCP quality gate removed 129 of 887 sessions on diffusion
+quality. No further exclusions are applied. Residual
+`qc_dmri_eddy_rel_motion` on retained sessions (745 of 753 have a QC record):
+median 1.56, 95th percentile 3.94, maximum 16.3.
+
+| | r |
+|---|---|
+| motion vs PMA | −0.141 |
+| motion vs GA at birth | −0.173 |
+| preterm vs term (median) | 1.61 vs 1.52 |
+
+Motion is **not** meaningfully associated with age or preterm status, so unlike
+density (S2) it cannot imitate a developmental trajectory or group structure.
+This is what makes the absence of a motion exclusion defensible.
+
+It is not inert, however:
+
+| measure | r(motion) | r(motion \| age) |
+|---|---|---|
+| strength | −0.143 | +0.046 |
+| clustering | +0.099 | +0.121 |
+| **communicability** | **−0.266** | **−0.242** |
+
+An association of approximately −0.24 with communicability survives age
+adjustment. Because the second research question *is* the characterisation of
+between-infant variation, an axis driven by scan quality could be recovered and
+misread as biological. Motion is therefore retained as a post-hoc diagnostic:
+each infant's position along each axis of Cₖ is correlated with residual motion,
+and an axis tracking motion is reported as artefactual.
+
+---
+
+## S8 Spline basis size
+
+*Settles the choice M = 20. A review comment asked whether M is fixed or
+selected; it is fixed, on the evidence below.*
+
+The developmental trajectories use cubic B-splines with a second-order
+random-walk (P-spline) prior. M is the number of basis functions. Under the
+P-spline construction of Eilers & Marx (1996), which the supplement cites, M is
+set generously and the penalty controls smoothness; M = 8 as originally proposed
+is small enough that the basis itself does the smoothing, making it a regression
+spline with mild shrinkage.
+
+Demonstration on region-averaged strength against postmenstrual age, fitted on
+569 training infants and scored on the 101 held-out infants:
+
+| setting | effective df | train RMSE | **validation RMSE** | wiggliness |
+|---|---|---|---|---|
+| M = 8, no penalty *(as proposed)* | 8.0 | 1.4026 | 1.6132 | 0.005 |
+| M = 15, no penalty | 15.0 | 1.3982 | 1.6125 | 0.005 |
+| M = 30, no penalty | 29.0 | 1.3712 | 1.6229 | **8.55** |
+| M = 15, penalty λ = 1 | 9.0 | 1.4012 | 1.6103 | 0.004 |
+| M = 15, penalty λ = 100 | 4.0 | 1.4282 | 1.6082 | 0.002 |
+| **M = 30, penalty λ = 100** | **6.5** | 1.4083 | **1.6047** | 0.002 |
+| M = 30, penalty λ = 10⁴ | 2.7 | 1.4470 | 1.6213 | 0.005 |
+
+Without a penalty, increasing M improves training error, worsens validation
+error, and inflates wiggliness by three orders of magnitude. With a penalty, a
+30-function basis uses only 6.5 effective degrees of freedom and achieves the
+best held-out score.
+
+With the penalty active, predictive performance is insensitive to M:
+
+| M | 10 | 15 | 20 | 30 | 40 |
+|---|---|---|---|---|---|
+| validation RMSE | 1.627 | 1.608 | 1.604 | 1.605 | 1.607 |
+
+a spread of 1.4%, against an effective degrees of freedom ranging from 3.0 to
+8.0. The penalty, not M, is doing the work.
+
+**Two features of this cohort reinforce the choice.** The age distribution is
+markedly uneven — 74% of infants are 38 weeks or older and only 59 (8.8%) fall
+below 34 weeks — so a single fixed stiffness must compromise between
+data-dense and data-sparse regions, whereas a penalty shrinks toward linearity
+where support is thin. And the model fits 270 such curves per group, each with
+its own smoothness precision λₖd; a small basis leaves that per-coordinate
+adaptation little room to act.
+
+**Adopted: M = 20**, knots equally spaced over 26.5–45.5 weeks (the observed
+range is 26.71–45.14; the originally proposed 26–45 span extrapolates for two
+infants), with λ estimated per coordinate as specified.
+
+For transparency: on the single coordinate tested, M = 8 unpenalised scored
+1.6132 against 1.6047 for the best penalised fit — a difference of 0.5%. The
+case for M = 20 rests on matching the cited method, on per-coordinate
+adaptivity, and on behaviour where data is sparse, not on a large gain in this
+one comparison.
+
+---
+
+## S9 Cohort and frozen splits
+
+*Produced by: `scripts/build_cohort.py`; outputs in `results/cohort/`.*
+
+| stage | n |
+|---|---|
+| imaging sessions released | 887 |
+| T2w passing QC | 886 |
+| dMRI passing QC | 758 |
+| infants with both required modalities | 673 |
+| connectome matrices constructed | 756 |
+| excluded — isolated nodes surviving mask dilation | 3 |
+| **connectomes delivered** | **753** |
+| unique infants | 670 |
+| **primary cohort (earliest scan per infant)** | **670** |
+
+The cascade above the final two rows is ab15's pipeline, not ours; we apply no
+further exclusions (S7).
+
+Primary cohort: 194 preterm, 476 term; PMA 26.71–45.14 weeks; PNA 0–19.43 weeks.
+
+**Splits**, assigned at infant level and frozen (seed 20261008): 101 infants
+held out for final validation, 569 allocated to 5 cross-validation folds,
+stratified by PMA quartile crossed with preterm status. No `dhcp_id` appears in
+more than one fold or spans both splits. Validation and training PMA
+distributions do not differ (Kolmogorov–Smirnov p = 0.98), so the hold-out is
+not age-biased.
+
+Age distribution of the primary cohort (2-week bands): 2, 7, 17, 33, 66, 50,
+114, 201, 150, 30 from 26–28 through 44–46 weeks. Median 40.6.
+
+---
+
+## S10 Genetic data coverage
+
+*Settles DECISIONS.md D9.*
+
+Polygenic scores: 569 infants × 48 scores, no missing values, covering
+psychiatric, neurological and imaging-derived phenotypes. Ancestry principal
+components are supplied in two sets:
+
+| file | n |
+|---|---|
+| all genotyped individuals | 766 |
+| European-ancestry subset | **569** |
+| polygenic score file | **569** |
+
+The exact correspondence indicates the scores were computed for the
+European-ancestry subset only; the EUR components are therefore the matching
+covariate set. The first five components account for 21.9% of genotypic
+variance and the first ten for 31.7%.
+
+Coverage within the primary cohort of 670 infants:
+
+| | n |
+|---|---|
+| polygenic scores | 415 |
+| polygenic scores + ancestry components | 415 |
+| 18-month CBCL | 522 |
+| ECBQ | 520 |
+| **polygenic scores + components + CBCL** | **341** |
+
+Coverage is balanced across preterm status (63% vs 61%). **The genetic arm
+covers 62% of the cohort and is restricted by ancestry; findings from it do not
+automatically generalise to the full sample, and this should be stated
+explicitly.**
