@@ -25,6 +25,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S8 | Spline basis size M | M = 20 |
 | S9 | Cohort and frozen splits | split validity |
 | S10 | Genetic data coverage | extension sample |
+| S11 | Model implementation is correct | validity of everything downstream |
 
 ---
 
@@ -382,3 +383,60 @@ Coverage is balanced across preterm status (63% vs 61%). **The genetic arm
 covers 62% of the cohort and is restricted by ancestry; findings from it do not
 automatically generalise to the full sample, and this should be stated
 explicitly.**
+
+---
+
+## S11 Model implementation validated before use
+
+*Produced by: `scripts/validate_model.py`. Gate for Stage 4.*
+
+The mixture of factor analysers with P-spline centres is fitted by ECM, using
+the Woodbury identity and matrix determinant lemma so that every covariance
+operation stays at q × q. Three checks were run before the model was applied to
+real data.
+
+**Woodbury identities.** Log-determinant and quadratic form computed through the
+low-rank decomposition agree with direct computation on the dense D × D
+covariance to eight decimal places. The q = 0 case reduces correctly to a
+diagonal covariance.
+
+**ECM monotonicity.** On data simulated at K = 2, q = 3, the penalised log
+likelihood rose from −25,367.6 to −15,353.5 over 120 sweeps, with a largest
+single-step change of **+9.7 × 10⁻⁶** — no decrease at any iteration, against a
+tolerance of 1.5 × 10⁻². A decrease would indicate an error in the M-step,
+most plausibly in the ψ scaling of the spline penalty (raised in review).
+
+**Parameter recovery.** Simulating at K = 3, q = 3 and refitting from eight
+random initialisations:
+
+| quantity | recovery |
+|---|---|
+| partition (adjusted Rand index vs true labels) | **1.000** |
+| group centres, mean absolute error | 0.088 — **5.1%** of signal scale |
+| within-group covariance C = WW′ + Ψ | 0.067 — 13.6% of scale |
+
+Covariance is compared through C rather than W, because the likelihood
+identifies W only up to rotation.
+
+**Model selection recovers the generating K.** Data simulated at K = 2, fitted
+at K = 1, 2, 3 and scored by held-out log predictive density on a 20% hold-out:
+
+| K | held-out log predictive density |
+|---|---|
+| 1 | −5,908.9 |
+| **2** | **−3,401.5** |
+| 3 | −3,495.3 |
+
+The procedure selects K = 2, penalising both the under- and over-specified
+alternatives.
+
+### Run provenance
+
+Every fit writes a JSON record (`results/provenance/`) holding the
+configuration, a SHA-256 digest of it, SHA-256 digests of the input feature and
+cohort files, the git commit, library versions, and whether float64 was active.
+Thresholds are recorded as value-plus-method pairs rather than bare numbers —
+`{"value": 1e-4, "method": "below smallest observed nonzero",
+"smallest_nonzero": 4.59e-4}` — so the rule behind each constant remains
+recoverable at write-up. This addresses a review comment, which asks for
+rules rather than values. The pattern follows mr09's study-provenance records.
