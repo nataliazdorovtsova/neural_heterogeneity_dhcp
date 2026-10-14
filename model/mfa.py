@@ -16,6 +16,7 @@ lam (K, D). Currently group-specific W and Psi; the shared variants are the
 next increment.
 """
 
+from functools import partial
 from typing import NamedTuple
 
 import jax
@@ -146,26 +147,45 @@ def penalised_loglik(ll, p: Params, h: Hyper):
     return ll + prior
 
 
-@jax.jit
-def _step(carry, _, X, B, h, var_floor):
-    p = carry
-    r, m, G, ll = e_step(X, B, p)
-    p_new = m_step(X, B, p, h, r, m, G, var_floor)
-    return p_new, penalised_loglik(ll, p, h)
-
-
-def fit(X, B, p0: Params, h: Hyper, n_iter: int = 200):
-    """Run n_iter ECM sweeps. Returns final parameters and the objective trace."""
-    X = jnp.asarray(X); B = jnp.asarray(B)
-    var_floor = jnp.var(X, axis=0)
-
+def _core(X, B, p0, h, n_iter, var_floor):
     def body(p, _):
         r, m, G, ll = e_step(X, B, p)
         obj = penalised_loglik(ll, p, h)
         return m_step(X, B, p, h, r, m, G, var_floor), obj
+    return jax.lax.scan(body, p0, None, length=n_iter)
 
-    p_final, trace = jax.lax.scan(body, p0, None, length=n_iter)
-    return p_final, trace
+
+@partial(jax.jit, static_argnames=("n_iter",))
+def fit(X, B, p0: Params, h: Hyper, n_iter: int = 200):
+    """Run n_iter ECM sweeps. Returns final parameters and the objective trace.
+
+    jitted with n_iter static: without this the 250-step scan body is retraced
+    and recompiled on every call, which dominated runtime (8.2 s per fit, almost
+    all of it compilation).
+    """
+    X = jnp.asarray(X); B = jnp.asarray(B)
+    return _core(X, B, p0, h, n_iter, jnp.var(X, axis=0))
+
+
+@partial(jax.jit, static_argnames=("n_iter",))
+def fit_restarts(X, B, p0s: Params, h: Hyper, n_iter: int = 200):
+    """Fit many random restarts at once.
+
+    `p0s` is a Params whose leaves carry a leading restart axis (see
+    `stack_params`). One compile covers all restarts and they run vectorised.
+    """
+    X = jnp.asarray(X); B = jnp.asarray(B)
+    var_floor = jnp.var(X, axis=0)
+    return jax.vmap(lambda p: _core(X, B, p, h, n_iter, var_floor))(p0s)
+
+
+def stack_params(ps) -> Params:
+    """Stack a list of Params into one with a leading restart axis."""
+    return jax.tree_util.tree_map(lambda *a: jnp.stack(a), *ps)
+
+
+def unstack_params(ps: Params, i: int) -> Params:
+    return jax.tree_util.tree_map(lambda a: a[i], ps)
 
 
 # ------------------------------------------------------------ prediction ----

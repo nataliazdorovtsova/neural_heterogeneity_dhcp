@@ -82,6 +82,37 @@ cluster**, and the whole sweep finishes in a few hours of wall time.
 The 200-replicate bootstrap bundles the same way: 10 tasks of 20 replicates, not
 200 jobs.
 
+## Gotcha: `--wrap` runs under dash, not bash
+
+`sbatch --wrap="..."` generates a script with a `#!/bin/sh` shebang. On these
+Ubuntu nodes `/bin/sh` is dash, which has no `source` builtin, so every task
+dies instantly with:
+
+```
+/var/spool/slurm/job.../slurm_script: 4: source: not found
+```
+
+(Exit code 127 across the whole array, within a second.) Your login shell being
+tcsh is a red herring — SLURM does not use it.
+
+`submit.sh` therefore submits a real job script, `scripts/slurm/_task.sh`, with
+a `#!/bin/bash` shebang, passing the project path and command through
+`--export`. Don't go back to `--wrap` unless the command is pure POSIX sh.
+
+## Measured costs (per SUPPLEMENT.md S8/S11, not guesses)
+
+| specification | wall time | hardware |
+|---|---|---|
+| K=1, q=0 | 3.6 min | 4 threads, login node |
+| K=3, q=10 | **8.6 min** | 4 threads, login node |
+
+A single ECM fit at K=3, q=10 is ~6.9 s for 250 sweeps; fitting the 20 restarts
+in one vectorised pass brings that to ~5.0 s each. Each specification is 5 folds
+x 20 restarts = 100 fits.
+
+The 35-specification K x q grid was submitted as 35 array tasks, 4 concurrent, 8
+CPUs and 32 GB each, 3 h limit — a peak of 32 CPUs, 2.7% of the cluster.
+
 ## Housekeeping
 
 - **Always set `--time`.** The 1-day default on a 10-minute job blocks the

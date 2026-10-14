@@ -93,7 +93,8 @@ SBATCH=(sbatch --parsable
   --cpus-per-task="$CPUS" --mem="$MEM" --time="$TIME"
   --output="${LOGDIR}/${NAME}_%A_%a.out"
   --error="${LOGDIR}/${NAME}_%A_%a.err"
-  --wrap="cd '${PROJECT}' && source activate.sh && ${CMD}")
+  --export="ALL,PROJECT=${PROJECT},TASK_CMD=${CMD}"
+  "${PROJECT}/scripts/slurm/_task.sh")
 
 if (( DRY )); then
   printf '\ndry run, not submitted:\n'; printf '%q ' "${SBATCH[@]}"; printf '\n'; exit 0
