@@ -26,6 +26,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S9 | Cohort and frozen splits | split validity |
 | S10 | Genetic data coverage | extension sample |
 | S11 | Model implementation is correct | validity of everything downstream |
+| S12 | Figure palettes | colour choices are computed, not eyeballed |
 
 ---
 
@@ -440,3 +441,39 @@ Thresholds are recorded as value-plus-method pairs rather than bare numbers —
 "smallest_nonzero": 4.59e-4}` — so the rule behind each constant remains
 recoverable at write-up. This addresses a review comment, which asks for
 rules rather than values. The pattern follows mr09's study-provenance records.
+
+---
+
+## S12 Figure palettes were validated, not chosen by eye
+
+*Produced by: `figstyle.py`, checked with the data-viz palette validator.*
+
+Figures follow the style of the proposal figure: warm sequential ramp for
+postmenstrual age, light panels, bold panel letters, horizontal colourbar
+beneath. Every palette was checked numerically rather than selected by eye.
+
+**Age ramp.** The proposal's own yellow-to-red ramp fails two computable checks
+against a near-white surface: its lightest step reaches only 1.26:1 contrast
+(2:1 floor) and it spans 70 degrees of hue, so it is not a single-hue sequential
+scale. The adopted six-step amber-to-deep-red ramp passes all four ordinal
+checks — monotone in lightness, adjacent lightness gaps at or above 0.06,
+light end above the contrast floor, hue spread under 40 degrees — while keeping
+the warmth of the original.
+
+**Categorical series** (group count K). Slots 1–5 of the validated reference
+palette, in fixed order. Light mode passes every gate on the adjacent pairlist:
+worst CVD separation ΔE 9.1 (target ≥ 8), worst normal-vision separation ΔE 19.6
+(floor ≥ 15). Three slots fall below 3:1 contrast on the light surface, so the
+relief rule applies and **every series carries a visible direct label** — colour
+never carries identity alone.
+
+**Scatter palettes** use only the first three slots, which clear the stricter
+all-pairs gate (CVD ΔE 9.2, normal-vision ΔE 24.0).
+
+Two defects were found by rendering the figures and inspecting them, which the
+validator cannot catch because they are geometry rather than colour: overlapping
+direct labels where two trajectories converged, and a line drawn from K = 1
+straight to K = 3 implying a K = 2 result that did not exist. A third was a
+genuine encoding error — two scatter calls on the same panel normalised the same
+variable independently, so identical values rendered in different hues. The
+collapse panel now labels values directly instead.
