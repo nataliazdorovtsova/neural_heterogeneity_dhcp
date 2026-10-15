@@ -508,3 +508,58 @@ An earlier version of this figure had a fourth encoding error. matplotlib reads
 a single RGBA tuple passed as `c=` as four data values when a series has exactly
 four points, so several K=4 points in panel B took colours from an unrelated
 colormap. It is fixed by passing `color=`.
+
+## S14 The within-population axes (K = 1): size, content, stability, correlates
+
+Fitted on all 569 training infants (`scripts/fit_final.py`; 20 restarts, 1000
+ECM sweeps; the validation infants were not used). Every fit converged, and all
+20 restarts reached the same optimum (spread 0.0 log-likelihood units):
+
+| model | penalised log lik | wall time (8 CPUs) |
+|---|---|---|
+| K=1, q=5 | −161,953.9 | 2.8 min |
+| K=1, q=15 | −150,325.8 | 17.7 min |
+| K=1, q=25 | −140,945.6 | 28.6 min |
+
+Axes are rotated to principal axes (largest first) and signed so that their
+loadings sum positive (`scripts/make_axes_figures.py`).
+
+**Size (q = 15).** The share of variation beyond age carried by each axis:
+6.7, 4.8, 3.9, 2.8, 2.3, 2.1, 1.9, 1.7, 1.6, 1.4, 1.3, 1.3, 1.2, 1.0 and 0.9%.
+The top 3 carry 15%, the top 6 carry 23% and all 15 carry 35%. The remaining
+65% is region-specific (the unique variances ψ).
+
+**Stability across q.** Each q = 15 axis was matched to its best-matching axis
+in the other models (|cosine|):
+
+| axis | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| vs q = 25 | 1.00 | 1.00 | 1.00 | 1.00 | 0.99 | 0.99 | 0.99 | 0.97 |
+| vs q = 5 | 1.00 | 1.00 | 1.00 | 0.92 | 0.71 | | | |
+
+Axes 1–3 are the same pattern whatever q is. Adding axes appends smaller
+patterns without changing the leading ones.
+
+**Content and correlates (top 6).** r is computed with infants' posterior axis
+scores, n = 569. Bonferroni over 42 tests gives |r| ≥ 0.14.
+
+| axis | share | dominant content | notable correlates |
+|---|---|---|---|
+| 1 | 6.7% | clustering throughout, strongest in insula, putamen and precuneus | network density −0.29, age since birth +0.18 |
+| 2 | 4.8% | strength throughout the brain | age since birth −0.31, density −0.26, female −0.23, GA at birth +0.18, motion +0.17 |
+| 3 | 3.9% | orbitofrontal strength and communicability vs posterior | motion −0.23, density −0.15 |
+| 4 | 2.8% | orbitofrontal/occipital clustering (−) vs pallidum (+) | motion −0.26, age since birth −0.15 |
+| 5 | 2.3% | posterior cingulate strength and communicability | age since birth −0.37, GA at birth +0.21, density +0.14 |
+| 6 | 2.1% | right olfactory (all three measures) | none |
+
+Notes for interpretation:
+- PMA at scan correlates 0.00 with every axis, as it must: age is modelled by
+  the trajectories. At fixed PMA, GA at birth and age since birth are the same
+  information (PMA = GA + PNA), so axis 5's two correlations are one finding.
+  Infants scanned longer after birth (i.e. born earlier) score lower.
+- Axis 1 is clustering-dominated and correlates with post-threshold density.
+  This is the density confound of S2. Its interpretation waits on the
+  fixed-density rebuild.
+- Axes 3 and 4 carry the strongest motion correlations. Per D8 they are
+  reported with that caveat, not removed.
+- Axis 6 is essentially one region and may be parcellation-specific.

@@ -157,7 +157,7 @@ def fig_overview(P, others, coh):
     fs.panel_letter(ax, "B", "What is each axis made of?")
     ax.texts[-1].set_y(1.17); ax.texts[-2].set_y(1.17)
 
-    # C: what does each axis relate to?
+    # D: what does each axis relate to? (bottom right)
     ax = fig.add_subplot(gs[1, 1])
     r, r_crit = correlates(P["scores"], coh, N_SHOW)
     rmax = max(0.3, np.nanmax(np.abs(r)))
@@ -175,13 +175,13 @@ def fig_overview(P, others, coh):
     for s in ax.spines.values():
         s.set_visible(False)
     ax.tick_params(length=0)
-    ax.text(0.0, -0.42, f"correlation of infants' axis scores with each variable; bold = "
+    ax.text(0.0, -0.36, f"correlation of infants' axis scores with each variable; bold = "
             f"|r| ≥ {r_crit:.2f} (Bonferroni over {r.size} tests). Age at scan is already "
             "modelled by the trajectories, so its column should be ~0.",
             transform=ax.transAxes, fontsize=7, color=fs.INK_2, va="top", wrap=True)
-    fs.panel_letter(ax, "C", "What does each axis relate to?")
+    fs.panel_letter(ax, "D", "What does each axis relate to?")
 
-    # D: are the axes the same when q changes?
+    # C: are the axes the same when q changes? (bottom left)
     ax = fig.add_subplot(gs[1, 0]); fs.tidy(ax)
     n = min(8, q)
     for o in others:
@@ -201,7 +201,7 @@ def fig_overview(P, others, coh):
     ax.set_xticks(range(1, n + 1))
     ax.set_xlabel(f"axis of the q = {q} model")
     ax.set_ylabel("similarity to best-matching axis (|cos|)")
-    fs.panel_letter(ax, "D", "Do the axes stay the same as q changes?")
+    fs.panel_letter(ax, "C", "Do the axes stay the same as q changes?")
 
     fig.suptitle("Within-population axes of variation: which ones matter?",
                  x=0.07, y=0.975, ha="left", fontsize=11, color=fs.INK)
