@@ -281,6 +281,29 @@ specified.**
 
 ---
 
+## D12. Non-converged specs are rerun at 1000 sweeps, not reported as-is
+
+*2026-10-15.* In the K×q sweep (job 4132482, 250 ECM sweeps per restart), 9 of
+35 specs had at least one fold whose best restart had not met the
+convergence criterion (relative change < 1e-6 on the final sweep). They are
+K1q15, K1q25, K2q25, K3q15, K3q25, K4q15, K5q5, K5q10 and K5q15, mostly at
+large K or q. Two more specs, K4q25 and K5q25, crashed at initialisation: a
+k-means start cluster had ≤ 25 members, so it had fewer than q residual
+directions to seed the loadings.
+
+- **Fix:** the missing loading columns are filled with small random columns
+  (1% of the residual SD). Zero columns would never move under ECM. Specs
+  whose start clusters were large enough draw no extra random numbers, so
+  their initialisations are unchanged.
+- **Rerun:** all 11 specs at 1000 sweeps (job 4164190, about 430 core-hours).
+  The provenance files are timestamped, so collect_sweep takes the newest
+  file per spec. The 250-sweep files stay on disk.
+- **Why it matters:** the K1-vs-K2 comparison turns on lpd margins of tens to
+  hundreds of units. An unconverged fold understates its spec's lpd, so the
+  comparison has to wait for converged fits.
+
+---
+
 ## Open — needs a decision or an answer
 - **Fixed-density rebuild** (D4) — asked, awaiting ab15.
 - **Sign-off on D10** (log on clustering rather than communicability).
