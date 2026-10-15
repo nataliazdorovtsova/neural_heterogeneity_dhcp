@@ -16,6 +16,14 @@ eye (node scripts/validate_palette.js):
                 every series carries a visible direct label, never colour alone.
   CLUSTER       first three categorical slots; passes the all-pairs gate used
                 for scatter.
+  DIVERGING     blue <-> red through the neutral grey #f0efec (the validator's
+                reference diverging pair), for signed quantities such as factor
+                loadings. The arms are matched step for step in OKLab lightness
+                (blue .338/.480/.622/.764/.905, red .335/.482/.623/.761/.904), so
+                neither sign looks heavier at equal magnitude. The palest steps
+                sit at ~1.3:1 on the surface by design: near zero should recede.
+                Markers on this scale carry a thin neutral edge so small values
+                stay visible.
 """
 
 import matplotlib as mpl
@@ -35,6 +43,10 @@ AGE_RAMP = LinearSegmentedColormap.from_list("pma_warm", AGE_STEPS)
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4"]
 CLUSTER = SERIES[:3]
 NEUTRAL = "#9a9a94"
+
+DIVERGING_STEPS = ["#0d366b", "#1c5cab", "#3987e5", "#86b6ef", "#cde2fb", "#f0efec",
+                   "#f9d6d0", "#f0958c", "#e34948", "#a8262a", "#661214"]
+DIVERGING = LinearSegmentedColormap.from_list("loading_div", DIVERGING_STEPS)
 
 
 def apply():
