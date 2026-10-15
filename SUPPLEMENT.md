@@ -587,11 +587,12 @@ is −218,986.1 (S13).
 - The best K falls as q rises: q ≤ 1 → K = 4–5; q = 2–5 → K = 2; q ≥ 10 → K = 1.
   Groups substitute for within-group covariance, and once q is adequate they
   stop helping.
-- Every K = 1 and K = 2 spec converged. Ten specs at K ≥ 3 and q ≥ 5 (plus
-  K = 3, q = 10) drove a group's share to zero. Four of those, all at K ≥ 4
-  with a vanishing group, still did not meet the strict convergence criterion
-  at 1000 sweeps. Their lpd moved by < 20 units between 250 and 1000 sweeps,
-  so the flag reflects a slowly vanishing group, not an unreliable score.
+- Every K = 1, 2 and 3 spec converged. Ten specs drove a group's share to zero:
+  K = 3 at q = 10, 15, 25; K = 4 at q = 10, 15, 25; and K = 5 at q = 5, 10, 15, 25.
+  Five of them (K = 4, q = 25 and all four K = 5 specs) still did not meet
+  the strict convergence criterion at 1000 sweeps. Where a 250-sweep score
+  exists (K = 5 at q = 5, 10, 15), the lpd moved by < 20 units, so the flag
+  reflects a slowly vanishing group, not an unreliable score.
 - 250 → 1000 sweeps changed the reruns' lpd by −152 to +96 (K = 1, q = 25:
   −171,011 → −170,915). No ranking changed.
 - **q is still rising at 25 for K = 1.** The q grid has not bracketed the
