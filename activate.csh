@@ -11,6 +11,8 @@ else
 endif
 setenv OMP_NUM_THREADS $_nthreads
 setenv MKL_NUM_THREADS $_nthreads
+setenv OPENBLAS_NUM_THREADS $_nthreads
+setenv NUMEXPR_NUM_THREADS $_nthreads
 setenv XLA_FLAGS "--xla_cpu_multi_thread_eigen=true intra_op_parallelism_threads=$_nthreads"
 
 setenv PATH "${_proj}/env/bin:${PATH}"

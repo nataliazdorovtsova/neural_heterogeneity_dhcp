@@ -173,14 +173,23 @@ def fig_model_selection():
         if collapsed.any():
             ax.scatter(sub.K[collapsed], drawn[collapsed], marker="v", s=70,
                        c=fs.SERIES[1], linewidths=0.5, edgecolors=fs.SURFACE, zorder=3)
+        # Label only the points that carry information: anything collapsed or
+        # within sight of the 2% line. Labelling every retained point stacks
+        # them illegibly at the top of the panel.
         for K, y, qq, col in zip(sub.K.values, drawn, sub.q.values, collapsed):
-            ax.annotate(f"q={qq}", (K, y), xytext=(9, 0), textcoords="offset points",
-                        fontsize=7.5, va="center",
-                        color=fs.SERIES[1] if col else fs.INK_2)
+            if col or y < 5:
+                ax.annotate(f"q={qq}", (K, y), xytext=(9, 0),
+                            textcoords="offset points", fontsize=7.5, va="center",
+                            color=fs.SERIES[1] if col else fs.INK_2)
+        n_ok = int((~collapsed & (drawn >= 5)).sum())
+        if n_ok:
+            ax.annotate(f"{n_ok} specifications kept every group\n(smallest 10–30% of infants)",
+                        (0.5, 0.97), xycoords="axes fraction", ha="center", va="top",
+                        fontsize=7.5, color=fs.INK_2)
         ax.axhline(2, color=fs.INK_MUTED, lw=1.3, ls=(0, (4, 2)), zorder=1)
-        ax.annotate("2% — a group has collapsed below this", (0.5, 2),
-                    xytext=(0, 6), textcoords="offset points",
-                    xycoords=("axes fraction", "data"), ha="center",
+        ax.annotate("2% — a group has collapsed below this", (0.03, 2),
+                    xytext=(0, -11), textcoords="offset points",
+                    xycoords=("axes fraction", "data"), ha="left",
                     fontsize=7.5, color=fs.INK_2)
         ax.set_yscale("log"); ax.set_ylim(FLOOR * 0.35, 400)
         ax.set_xticks(sorted(sub.K.unique()))

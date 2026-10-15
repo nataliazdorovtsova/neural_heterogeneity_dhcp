@@ -104,10 +104,15 @@ def run(spec, verbose=True):
 
 
 def main():
+    global N_ITER
     ap = argparse.ArgumentParser()
     ap.add_argument("--index", type=int)
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--n-iter", type=int, default=None,
+                    help=f"ECM sweeps per restart (default {N_ITER}); raise for specs that did not converge")
     a = ap.parse_args()
+    if a.n_iter is not None:
+        N_ITER = a.n_iter
     if a.list:
         for i, s in enumerate(SPECS):
             print(f"{i:3d}  {spec_name(s)}")

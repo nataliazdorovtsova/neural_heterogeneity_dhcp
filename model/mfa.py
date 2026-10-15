@@ -239,10 +239,16 @@ def init_params(X, B, K, q, rng, h: Hyper, jitter: float = 0.1) -> Params:
         Bk, Xk = B[idx], X[idx]
         beta[k] = np.linalg.solve(Bk.T @ Bk + 1e-2 * P, Bk.T @ Xk)
         rk = Xk - Bk @ beta[k]
+        psi[k] = np.maximum(rk.var(0), 1e-6 * X.var(0))
         if q > 0:
             U, S, Vt = np.linalg.svd(rk - rk.mean(0), full_matrices=False)
-            W[k] = (Vt[:q].T * (S[:q] / np.sqrt(max(len(idx) - 1, 1))))
-        psi[k] = np.maximum(rk.var(0), 1e-6 * X.var(0))
+            r = min(q, len(S))
+            W[k, :, :r] = Vt[:r].T * (S[:r] / np.sqrt(max(len(idx) - 1, 1)))
+            # A start cluster with <= q members has fewer than q residual
+            # directions. Fill the rest with small random columns rather than
+            # zeros: a zero column has zero gradient under ECM and never moves.
+            if r < q:
+                W[k, :, r:] = 1e-2 * np.sqrt(psi[k])[:, None] * rng.standard_normal((D, q - r))
 
     counts = np.bincount(labels, minlength=K).astype(float) + 1.0
     log_pi = np.log(counts / counts.sum())

@@ -13,6 +13,8 @@ export JAX_PLATFORMS=cpu
 _NTHREADS="${SLURM_CPUS_PER_TASK:-4}"
 export OMP_NUM_THREADS="$_NTHREADS"
 export MKL_NUM_THREADS="$_NTHREADS"
+export OPENBLAS_NUM_THREADS="$_NTHREADS"
+export NUMEXPR_NUM_THREADS="$_NTHREADS"
 export XLA_FLAGS="--xla_cpu_multi_thread_eigen=true intra_op_parallelism_threads=$_NTHREADS"
 unset _NTHREADS
 
