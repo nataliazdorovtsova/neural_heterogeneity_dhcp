@@ -563,3 +563,38 @@ Notes for interpretation:
 - Axes 3 and 4 carry the strongest motion correlations. Per D8 they are
   reported with that caveat, not removed.
 - Axis 6 is essentially one region and may be parcellation-specific.
+
+## S15 K × q sweep, final (group-specific covariance, PMA clock)
+
+All 35 specifications, 5-fold CV over 569 training infants. The 11 specs that
+did not converge or crashed at 250 sweeps were rerun at 1000 (D12). Values are
+the total held-out log predictive density (higher is better); the null baseline
+is −218,986.1 (S13).
+
+| q \ K | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| 0 | −197,438 | −194,353 | −191,489 | −190,595 | −189,157 |
+| 1 | −192,677 | −188,555 | −187,193 | −186,929 | −187,104 |
+| 2 | −188,013 | −184,484 | −184,638 | −185,770 | −186,442 |
+| 5 | −183,442 | −181,678 | −182,582 | −184,606 | −185,254 |
+| 10 | −178,979 | −179,054 | −183,521 | −186,046 | −186,810 |
+| 15 | −175,867 | −177,982 | −183,459 | −187,054 | −190,494 |
+| 25 | **−170,915** | −176,069 | −183,455 | −190,789 | −198,451 |
+
+- **Best: K = 1, q = 25.** Gain over the null +84.5 per infant, vs +75.4 for the
+  best two-group model (K = 2, q = 25): a margin of 9.0 log units per held-out
+  infant.
+- The best K falls as q rises: q ≤ 1 → K = 4–5; q = 2–5 → K = 2; q ≥ 10 → K = 1.
+  Groups substitute for within-group covariance, and once q is adequate they
+  stop helping.
+- Every K = 1 and K = 2 spec converged. Ten specs at K ≥ 3 and q ≥ 5 (plus
+  K = 3, q = 10) drove a group's share to zero. Four of those, all at K ≥ 4
+  with a vanishing group, still did not meet the strict convergence criterion
+  at 1000 sweeps. Their lpd moved by < 20 units between 250 and 1000 sweeps,
+  so the flag reflects a slowly vanishing group, not an unreliable score.
+- 250 → 1000 sweeps changed the reruns' lpd by −152 to +96 (K = 1, q = 25:
+  −171,011 → −170,915). No ranking changed.
+- **q is still rising at 25 for K = 1.** The q grid has not bracketed the
+  optimum (see open items).
+- Compute: 52.7 task wall-hours at 8 CPUs per task ≈ 420 core-hours for the
+  full grid, including the reruns.

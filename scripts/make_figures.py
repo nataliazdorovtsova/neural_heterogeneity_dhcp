@@ -147,7 +147,7 @@ def fig_model_selection():
     ax.scatter([], [], s=30, c=fs.INK_2, label="converged")
     ax.scatter([], [], s=30, facecolors=fs.SURFACE, edgecolors=fs.INK_2, linewidths=1.4,
                label="not yet converged")
-    ax.legend(loc="lower right", fontsize=7.5, handletextpad=0.3)
+    ax.legend(loc="upper left", fontsize=7.5, handletextpad=0.3)
     fs.panel_letter(ax, "A", "Score against rank q")
     ax.set_xlim(-1.5, df.q.max() * 1.22)      # room for the direct labels
     ax.set_xlabel("latent dimension q"); ax.set_ylabel(GAIN_LABEL)

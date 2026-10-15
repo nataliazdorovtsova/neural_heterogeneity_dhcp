@@ -102,7 +102,10 @@ def main():
     near = (df.heldout_lpd > df.heldout_lpd.max() - 0.01 * abs(df.heldout_lpd.max())).sum()
     print(f"\nprofile spread {rng:,.0f} lpd; {near} specifications within 1% of the best")
     print("(a flat profile is weak evidence for a particular rank or group count)")
-    print(f"\ntotal compute {df.seconds.sum()/3600:.1f} core-hours-equivalent across {len(df)} specs")
+    # seconds are per-task wall time; each task held its own CPU allocation
+    # (8 CPUs for the sweep), so core-hours are this times the CPUs per task.
+    print(f"\ntotal compute {df.seconds.sum()/3600:.1f} task wall-hours across {len(df)} specs "
+          f"(x CPUs per task for core-hours)")
 
 
 if __name__ == "__main__":

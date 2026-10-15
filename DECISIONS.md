@@ -305,6 +305,10 @@ directions to seed the loadings.
 ---
 
 ## Open — needs a decision or an answer
+- **Extend the q grid for K = 1** (S15): held-out lpd still rises at q = 25
+  (+84.5 per infant). Candidates q = 35, 50, 70. Each K = 1 spec costs
+  ~3–6 h on 8 CPUs, so the three cost roughly 150 core-hours. This affects the
+  choice of q only; S14 shows the leading axes are unchanged by q.
 - **Fixed-density rebuild** (D4) — asked, awaiting ab15.
 - **Sign-off on D10** (log on clustering rather than communicability).
 - **Knot span** — observed PMA is 26.71–45.14; the proposed 26–45 basis
