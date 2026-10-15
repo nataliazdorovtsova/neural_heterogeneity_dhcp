@@ -5,6 +5,9 @@
 Reports held-out log predictive density over q at fixed K and over K at fixed q,
 flags specifications that failed to converge or collapsed a group, and writes
 results/sweep_summary.csv.
+
+Scores are also expressed as a gain per held-out infant over a null baseline
+(see baseline_lpd), which is what the model-selection figure plots.
 """
 
 import json
@@ -14,8 +17,27 @@ import numpy as np
 import pandas as pd
 
 import paths
+from features import standardise
 
 PROV = paths.RESULTS / "provenance"
+
+
+def baseline_lpd():
+    """Held-out log density of the null model, summed over the CV folds.
+
+    The null model treats each of the 270 coordinates as an independent normal
+    with the fit fold's mean and SD: no age, no groups, no axes. It uses the same
+    infants, folds and standardisation as run_spec, so (spec - baseline) / n is
+    the gain per held-out infant that the model's structure buys.
+    """
+    from scripts.run_spec import load
+    coh, X = load()
+    folds = coh.fold.values
+    total = 0.0
+    for f in np.unique(folds):
+        _, Zo, *_ = standardise(X[folds != f], X[folds == f])
+        total += float(-0.5 * (np.log(2 * np.pi) + Zo ** 2).sum())
+    return total, len(coh)
 
 
 def main():
@@ -27,6 +49,7 @@ def main():
             K=c["K"], q=c["q"], clock=c["clock"], sharing=c["covariance_sharing"],
             heldout_lpd=r["total_heldout_lpd"],
             per_infant=r["mean_heldout_lpd_per_infant"],
+            n_heldout=sum(x["n_out"] for x in r["per_fold"]),
             converged=r["all_converged"],
             min_group_share=min(x["min_group_share"] for x in r["per_fold"]),
             usable_restarts=r["successful_restarts"],
@@ -40,6 +63,12 @@ def main():
             .sort_values("file")
             .drop_duplicates(subset=["K", "q", "clock", "sharing"], keep="last")
             .sort_values(["K", "q"]).reset_index(drop=True))
+    base, n = baseline_lpd()
+    assert (df.n_heldout == n).all(), "spec and baseline scored different infants"
+    df["baseline_lpd"] = base
+    df["gain_per_infant"] = (df.heldout_lpd - base) / n
+    print(f"null baseline: {base:,.1f} over {n} held-out infants "
+          f"({base / n:.1f} per infant, {base / n / 270:.3f} per coordinate)")
     df.to_csv(paths.RESULTS / "sweep_summary.csv", index=False)
     print(f"{len(df)} specifications\n")
 
@@ -49,7 +78,8 @@ def main():
 
     best = df.loc[df.heldout_lpd.idxmax()]
     print(f"\nbest: K={int(best.K)}, q={int(best.q)}  "
-          f"({best.heldout_lpd:,.1f}; {best.per_infant:.1f} per held-out infant)")
+          f"({best.heldout_lpd:,.1f}; {best.per_infant:.1f} per held-out infant, "
+          f"+{best.gain_per_infant:.1f} per infant over the null baseline)")
 
     print("\n=== best q at each K ===")
     for K, g in df.groupby("K"):

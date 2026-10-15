@@ -477,3 +477,34 @@ straight to K = 3 implying a K = 2 result that did not exist. A third was a
 genuine encoding error — two scatter calls on the same panel normalised the same
 variable independently, so identical values rendered in different hues. The
 collapse panel now labels values directly instead.
+
+## S13 Model scores are reported as a gain per infant over a null baseline
+
+Held-out log predictive densities are large negative sums: the log of a density
+over 270 coordinates, summed over 569 held-out infants. Their absolute value
+has no direct interpretation. The model-selection figure therefore plots
+
+  gain per infant = (spec held-out lpd − null held-out lpd) / 569
+
+where the null model treats each standardised coordinate as an independent
+normal with its fit-fold mean and SD: no age, no groups and no axes. It is
+scored on the same folds and infants as every specification
+(`collect_sweep.baseline_lpd`).
+
+| quantity | value |
+|---|---|
+| null held-out lpd (total) | −218,986.1 |
+| per infant | −384.9 |
+| per coordinate | −1.425 (the expectation for an exact N(0,1) is −1.419) |
+
+A gain difference of 1 between two models means the better one gives a typical
+held-out infant's data e ≈ 2.7 times the density. Its gain is the mean log
+density ratio, i.e. a geometric mean over infants. On the 250-sweep sweep,
+gains ranged from +37.8 (K=1, q=0) to +84.3 (K=1, q=25, not yet converged).
+Unconverged fits are drawn with open markers until the 1000-sweep rerun (D12)
+replaces them.
+
+An earlier version of this figure had a fourth encoding error. matplotlib reads
+a single RGBA tuple passed as `c=` as four data values when a series has exactly
+four points, so several K=4 points in panel B took colours from an unrelated
+colormap. It is fixed by passing `color=`.
