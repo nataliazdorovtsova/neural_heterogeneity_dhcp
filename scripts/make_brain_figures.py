@@ -2,10 +2,12 @@
 
     python scripts/make_brain_figures.py
 
-fig5_axis{j}_brain.png   one per axis: each AAL region coloured by its loading,
-                         seen from the side, from the midline and from above,
-                         plus an axial slice for the deep structures
-fig6_region_profiles.png every region's loading on the leading axes
+fig5_axis{j}_brain      one per axis: each AAL region coloured by its loading,
+                        seen from the side and from the midline, an axial slice
+                        for the deep structures, and the ten strongest loadings
+fig6_region_profiles    every region's loading on the leading axes, by hemisphere
+
+Every figure is written as PNG (150 DPI) and PDF, in the project style.
 
 Display only: regions are drawn on the UNC neonatal T2w template with its own
 AAL90 labels (data/atlases/UNC_neonatal_*), which share a 1 mm grid. The
@@ -18,9 +20,9 @@ so the result looks like a surface render without needing surface meshes.
 """
 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, to_rgb
+from matplotlib.patches import Patch
 from scipy import ndimage
 
 import paths
@@ -33,7 +35,8 @@ from scripts.make_axes_figures import (principal_axes, correlates, COVARIATES,
 
 OUT = paths.FIGURES
 N_AXES = 5                       # axes 1-5 are stable across q (SUPPLEMENT S14)
-BRAIN = to_rgb("#d4d3cd")        # unlabelled tissue (cerebellum, brainstem)
+BRAIN = to_rgb(fs.NEUTRAL_GREY)  # unlabelled tissue (cerebellum, brainstem)
+BG = np.array(to_rgb("white"))
 EDGE_DARKEN = 0.72               # parcel borders
 SURFACE_TOL = 4                  # voxels: a label this close under the brain surface counts as visible
 
@@ -78,7 +81,6 @@ VIEWS = {   # name: (projection axis, look from the + side?, hemisphere, flip co
     "left medial":   (0, True, "L", False),    # anterior on the right
     "right medial":  (0, False, "R", True),
     "right lateral": (0, True, "R", False),
-    "from above":    (2, True, None, False),   # anterior up, right on the right
 }
 
 
@@ -101,7 +103,7 @@ def render(lab, mask, values, cmap, norm, view, mid):
     light = np.array([-0.35, 0.45, 0.82]); light /= np.linalg.norm(light)
     shade = 0.68 + 0.32 * np.clip(n @ light, 0, 1)
 
-    rgb = np.ones(hit_m.shape + (3,)) * np.array(to_rgb(fs.SURFACE))
+    rgb = np.ones(hit_m.shape + (3,)) * BG
     rgb[hit_m] = BRAIN
     lab_vis = np.where(visible, first_lab, 0)
     colours = cmap(norm(values))[:, :3]                      # (90, 3)
@@ -121,14 +123,14 @@ def deep_slice(lab, t2, values, cmap, norm, k):
     sl, bg = lab[:, :, k], t2[:, :, k]
     g = np.clip(bg / np.percentile(t2[t2 > 0], 99), 0, 1)
     rgb = np.where(bg[..., None] > 0, 0.25 + 0.6 * g[..., None], 1.0) * np.ones(3)
-    rgb[bg <= 0] = to_rgb(fs.SURFACE)
+    rgb[bg <= 0] = BG
     on = sl > 0
     rgb[on] = 0.15 * rgb[on] + 0.85 * cmap(norm(values))[sl[on] - 1, :3]
     return np.stack([np.flipud(rgb[..., c].T) for c in range(3)], -1)
 
 
 def crop(img, pad=4):
-    fg = np.any(np.abs(img - np.array(to_rgb(fs.SURFACE))) > 1e-3, -1)
+    fg = np.any(np.abs(img - BG) > 1e-3, -1)
     r, c = np.where(fg)
     return img[max(r.min() - pad, 0):r.max() + pad, max(c.min() - pad, 0):c.max() + pad]
 
@@ -138,43 +140,58 @@ def crop(img, pad=4):
 def fig_axis_brain(j, P, lab, t2, mask, mid, k_deep, vmax, corr_text):
     R = P["L"].reshape(90, 3, -1)
     cmap, norm = fs.DIVERGING, Normalize(-vmax, vmax)
-    cols = list(VIEWS) + ["deep structures (axial slice)"]
-    fig, axes = plt.subplots(3, len(cols), figsize=(15, 7.6),
-                             gridspec_kw=dict(width_ratios=[1.25, 1.25, 1.25, 1.25, 0.95, 0.95]))
-    fig.subplots_adjust(wspace=0.04, hspace=0.06, left=0.085, right=0.995, top=0.84, bottom=0.11)
+    cols = list(VIEWS) + ["deep (axial)"]
+    fig = plt.figure(figsize=fs.FIGURE_SIZES["full_page"])
+    gs = fig.add_gridspec(5, len(cols), height_ratios=[1, 1, 1, 0.85, 1.75],
+                          width_ratios=[1.2, 1.2, 1.2, 1.2, 0.95],
+                          left=0.07, right=0.99, top=0.88, bottom=0.1, wspace=0.03, hspace=0.08)
     for m, meas in enumerate(MEASURES):
         v = R[:, m, j]
         for c, view in enumerate(cols):
-            ax = axes[m, c]
+            ax = fig.add_subplot(gs[m, c])
             img = deep_slice(lab, t2, v, cmap, norm, k_deep) if c == len(cols) - 1 \
                 else render(lab, mask, v, cmap, norm, view, mid)
             ax.imshow(crop(img), interpolation="lanczos")
             ax.axis("off")
             if m == 0:
-                ax.set_title(view, loc="center", fontsize=8.5, color=fs.INK_2)
-        axes[m, 0].text(-0.04, 0.5, MEASURE_LABEL[meas], transform=axes[m, 0].transAxes,
-                        ha="right", va="center", fontsize=9.5, color=fs.INK, rotation=90)
-    axes[2, 4].text(0.5, -0.08, "anterior up · R on right", transform=axes[2, 4].transAxes,
-                    ha="center", va="top", fontsize=7, color=fs.INK_MUTED)
-    axes[2, 5].text(0.5, -0.08, "thalamus / basal ganglia level", transform=axes[2, 5].transAxes,
-                    ha="center", va="top", fontsize=7, color=fs.INK_MUTED)
+                ax.set_title(view, loc="center", fontsize=14, fontweight="bold", pad=6)
+            if c == 0:
+                ax.text(-0.06, 0.5, MEASURE_LABEL[meas], transform=ax.transAxes, ha="right",
+                        va="center", fontsize=fs.NOTE_SIZE, fontweight="bold", rotation=90)
+            if m == 0 and c == 0:
+                ax.text(-0.32, 1.1, "A", transform=ax.transAxes, fontsize=16,
+                        fontweight="bold", va="bottom")
 
-    cax = fig.add_axes([0.36, 0.045, 0.3, 0.014])
     sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
-    cb = fig.colorbar(sm, cax=cax, orientation="horizontal")
-    cb.outline.set_visible(False)
-    cb.ax.tick_params(labelsize=7.5, colors=fs.INK_MUTED, length=0)
-    cb.set_label("loading: SD change in the region's measure per SD of axis score "
-                 "(red = higher in infants scoring high on the axis)", fontsize=8, color=fs.INK_2)
-    fig.suptitle(f"Axis {j + 1} · {P['share'][j] * 100:.1f}% of variation beyond age",
-                 x=0.085, y=0.975, ha="left", fontsize=12, color=fs.INK)
-    fig.text(0.085, 0.925, corr_text, ha="left", fontsize=8.5, color=fs.INK_2)
-    fig.text(0.085, 0.895, "one-group model, q = 15 · same colour scale on every axis figure · "
-             "grey = tissue outside the 90 AAL regions", ha="left", fontsize=7.5,
-             color=fs.INK_MUTED)
-    p = OUT / f"fig5_axis{j + 1}_brain.png"
-    fig.savefig(p, bbox_inches="tight", dpi=170); plt.close(fig)
-    return p
+    spacer = gs[3, :].get_position(fig)
+    fs.horizontal_colorbar(fig, sm, [0.3, spacer.y1 - 0.012, 0.42, 0.012],
+                           "loading (SD per SD of axis score)")
+
+    # B: the ten strongest loadings
+    ax = fig.add_subplot(gs[4, 1:4])
+    v = P["L"][:, j]
+    top = np.argsort(-np.abs(v))[:10][::-1]
+    vals = v[top]
+    lim = vmax * 1.3
+    ax.set_xlim(-lim, lim); ax.set_ylim(-0.6, len(top) - 0.4)
+    fs.rounded_bars(ax, np.arange(len(top)), vals, width=0.7, horizontal=True,
+                    color=[fs.POSITIVE_COLOUR if x > 0 else fs.NEGATIVE_COLOUR for x in vals],
+                    value_fmt="{:+.2f}")
+    ax.axvline(0, color=fs.TEXT_PRIMARY, lw=0.8)
+    ax.set_yticks(range(len(top)),
+                  [f"{short(atlas.NAMES[d // 3])} · {MEASURE_LABEL[MEASURES[d % 3]]}" for d in top])
+    ax.tick_params(axis="y", length=0)
+    ax.spines["left"].set_visible(False)
+    ax.set_xlabel("loading")
+    fs.panel_title(ax, "B", "Strongest loadings")
+
+    fig.suptitle(f"Axis {j + 1}: {P['share'][j] * 100:.1f}% of variation beyond age",
+                 x=0.07, y=0.985, ha="left", fontsize=16, fontweight="bold")
+    fig.text(0.07, 0.945, corr_text, ha="left", fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY)
+    fig.text(0.07, 0.0, "One-group model, q = 15. Red = higher in infants scoring high on "
+             "the axis, blue = lower;\ngrey = tissue outside the 90 AAL regions. Same colour "
+             "scale for every axis.", fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY, va="top")
+    return fs.save_figure(fig, OUT / f"fig5_axis{j + 1}_brain")
 
 
 def short(name):
@@ -184,44 +201,41 @@ def short(name):
 
 def fig_region_profiles(P, vmax):
     R = P["L"].reshape(90, 3, -1)
-    order = [r for lobe in atlas.LOBES for r in np.where(atlas.LOBE == lobe)[0]]
-    M = np.concatenate([R[order, :, j] for j in range(N_AXES)], axis=1)   # (90, 3*N)
-    fig, ax = plt.subplots(figsize=(7.4, 15.5))
-    fig.subplots_adjust(left=0.30, right=0.97, top=0.93, bottom=0.06)
-    im = ax.imshow(M, cmap=fs.DIVERGING, vmin=-vmax, vmax=vmax, aspect="auto",
-                   interpolation="nearest")
-    ax.set_yticks(range(90), [short(atlas.NAMES[r]) for r in order], fontsize=6.3)
-    ax.set_xticks(range(3 * N_AXES), ["str", "clu", "com"] * N_AXES, fontsize=7)
-    ax.xaxis.tick_top()
-    for j in range(N_AXES):
-        ax.text(3 * j + 1, -3.2, f"axis {j + 1}\n{P['share'][j] * 100:.1f}%", ha="center",
-                va="bottom", fontsize=8, color=fs.INK)
-        if j:
-            ax.axvline(3 * j - 0.5, color=fs.SURFACE, lw=3)
-    start = 0
-    for lobe in atlas.LOBES:
-        n = int((atlas.LOBE == lobe).sum())
-        if start:
-            ax.axhline(start - 0.5, color=fs.SURFACE, lw=3)
-        ax.text(-0.42, (start + start + n - 1) / 2, lobe, transform=ax.get_yaxis_transform(),
-                ha="right", va="center", fontsize=8.5, color=fs.INK, rotation=90)
-        start += n
-    ax.grid(False); ax.tick_params(length=0)
-    for s in ax.spines.values():
-        s.set_visible(False)
-    cax = fig.add_axes([0.42, 0.025, 0.42, 0.008])
-    cb = fig.colorbar(im, cax=cax, orientation="horizontal")
-    cb.outline.set_visible(False)
-    cb.ax.tick_params(labelsize=7, colors=fs.INK_MUTED, length=0)
-    cb.set_label("loading (SD per SD of axis score)", fontsize=7.5, color=fs.INK_2)
-    fig.suptitle("What each axis says about each region", x=0.02, y=0.985, ha="left",
-                 fontsize=11.5, color=fs.INK)
-    fig.text(0.02, 0.965, "str = strength · clu = clustering · com = communicability · "
-             "red = higher in infants scoring high on the axis", ha="left", fontsize=7.5,
-             color=fs.INK_2)
-    p = OUT / "fig6_region_profiles.png"
-    fig.savefig(p, dpi=170); plt.close(fig)
-    return p
+    fig, axes = plt.subplots(1, 2, figsize=fs.FIGURE_SIZES["multi_panel_tall"])
+    fig.subplots_adjust(left=0.16, right=0.99, top=0.9, bottom=0.08, wspace=0.62)
+    for ax, (hemi, letter, title) in zip(axes, (("L", "A", "Left hemisphere"),
+                                                ("R", "B", "Right hemisphere"))):
+        order = [r for lobe in atlas.LOBES
+                 for r in np.where((atlas.LOBE == lobe) & (atlas.HEMI == hemi))[0]]
+        M = np.concatenate([R[order, :, j] for j in range(N_AXES)], axis=1)
+        im = ax.imshow(M, cmap=fs.DIVERGING, vmin=-vmax, vmax=vmax, aspect="auto",
+                       interpolation="nearest")
+        ax.set_yticks(range(len(order)), [short(atlas.NAMES[r])[:-2] for r in order])
+        ax.set_xticks(range(3 * N_AXES), ["str", "clu", "com"] * N_AXES, rotation=90)
+        for j in range(N_AXES):
+            ax.text(3 * j + 1, -0.8, f"axis {j + 1}", ha="center", va="bottom",
+                    fontsize=fs.NOTE_SIZE, fontweight="bold")
+            if j:
+                ax.axvline(3 * j - 0.5, color="white", lw=3)
+        start = 0
+        for lobe in atlas.LOBES:
+            n = int(((atlas.LOBE == lobe) & (atlas.HEMI == hemi)).sum())
+            if start:
+                ax.axhline(start - 0.5, color="white", lw=3)
+            ax.text(-0.43, start + (n - 1) / 2, lobe, transform=ax.get_yaxis_transform(),
+                    ha="center", va="center", fontsize=fs.NOTE_SIZE, fontweight="bold",
+                    rotation=90)
+            start += n
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+        ax.tick_params(length=0)
+        ax.set_title(f"{letter}   {title}", pad=30)
+    fs.horizontal_colorbar(fig, im, [0.35, 0.04, 0.4, 0.008],
+                           "loading (SD per SD of axis score)")
+    fig.text(0.02, 0.0, "str = strength, clu = clustering, com = communicability. Red = higher "
+             "in infants scoring high on the axis, blue = lower. One-group model, q = 15.",
+             fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY, va="top")
+    return fs.save_figure(fig, OUT / "fig6_region_profiles")
 
 
 def main():
@@ -243,20 +257,20 @@ def main():
     R = P["L"].reshape(90, 3, -1)
     vmax = float(np.abs(R[:, :, :N_AXES]).max())
     rc, r_crit = correlates(P["scores"], coh, N_AXES)
-    fs.apply()
+    fs.apply_style()
     for j in range(N_AXES):
         sig = [(abs(rc[j, c]), f"{name} {rc[j, c]:+.2f}")
                for c, name in enumerate(COVARIATES) if abs(rc[j, c]) >= r_crit]
         text = ("related to: " + ", ".join(s for _, s in sorted(sig, reverse=True))) if sig \
             else "no covariate passes the Bonferroni threshold"
-        print(f"wrote {fig_axis_brain(j, P, lab, t2, mask, mid, k_deep, vmax, text)}")
+        print("wrote", fig_axis_brain(j, P, lab, t2, mask, mid, k_deep, vmax, text)[0])
         for m, meas in enumerate(MEASURES):
             v = R[:, m, j]
             top = np.argsort(-v)[:4]; bot = np.argsort(v)[:3]
             print(f"   {MEASURE_LABEL[meas]:>15}: + " +
                   ", ".join(f"{short(atlas.NAMES[i])} {v[i]:+.2f}" for i in top) +
                   "  | - " + ", ".join(f"{short(atlas.NAMES[i])} {v[i]:+.2f}" for i in bot))
-    print(f"wrote {fig_region_profiles(P, vmax)}")
+    print("wrote", fig_region_profiles(P, vmax)[0])
 
 
 if __name__ == "__main__":

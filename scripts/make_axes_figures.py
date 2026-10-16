@@ -11,14 +11,16 @@ they are rotated to principal axes (largest variance first; the same rotation
 PCA uses) and each is signed so that its loadings sum positive. A higher score
 then means "more of these measures overall".
 
-fig3_axes_overview.png   size, content, correlates and stability of the axes
-fig4_axis_maps.png       brain maps of the three largest axes
+fig3_axes_overview       size, content, correlates and stability of the axes
+fig4_axis_maps           brain maps of the three largest axes
 results/final/axes_K1_q{q}.csv   every region's loadings, for the tables
 """
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 from scipy import stats
 
 import paths
@@ -96,121 +98,105 @@ def best_match(La, Lb, n):
 
 
 def ink_on(rgba):
-    """Text token that stays legible on a filled cell."""
+    """Text colour that stays legible on a filled cell."""
     lum = 0.2126 * rgba[0] + 0.7152 * rgba[1] + 0.0722 * rgba[2]
-    return fs.SURFACE if lum < 0.5 else fs.INK
+    return "white" if lum < 0.5 else fs.TEXT_PRIMARY
+
+
+def _heatmap_frame(ax):
+    for s in ax.spines.values():
+        s.set_visible(False)
+    ax.tick_params(length=0)
 
 
 def fig_overview(P, others, coh):
-    fig = plt.figure(figsize=(12.5, 8.6))
-    gs = fig.add_gridspec(2, 2, wspace=0.28, hspace=0.62, left=0.07, right=0.97,
-                          top=0.87, bottom=0.1, width_ratios=[1, 1.25])
+    fig, axes = plt.subplots(2, 2, figsize=fs.FIGURE_SIZES["full_page"],
+                             gridspec_kw=dict(width_ratios=[1, 1.2]))
+    fig.subplots_adjust(wspace=0.38, hspace=0.62, left=0.09, right=0.93, top=0.94, bottom=0.15)
     q = P["q"]
 
-    # A: how big is each axis?
-    ax = fig.add_subplot(gs[0, 0]); fs.tidy(ax)
+    # A: how much variation each axis carries
+    ax = axes[0, 0]
     x = np.arange(1, q + 1)
-    ax.bar(x, P["share"] * 100, color=fs.SERIES[0], width=0.72, zorder=2,
-           label=f"q = {q} (primary)")
-    marks = {5: ("D", fs.SERIES[2]), 25: ("o", fs.SERIES[1])}
-    for o in others:
-        m, col = marks.get(o["q"], ("s", fs.NEUTRAL))
-        k = min(o["q"], q)
-        ax.scatter(np.arange(1, k + 1), o["share"][:k] * 100, marker=m, s=22, zorder=3,
-                   facecolors=fs.SURFACE, edgecolors=col, linewidths=1.3,
-                   label=f"q = {o['q']}")
+    ax.set_xlim(0.3, q + 0.7); ax.set_ylim(0, P["share"].max() * 100 * 1.45)
+    fs.rounded_bars(ax, x[:N_SHOW], P["share"][:N_SHOW] * 100, color=fs.Q_COLOURS[q],
+                    value_fmt="{:.1f}")
+    fs.rounded_bars(ax, x[N_SHOW:], P["share"][N_SHOW:] * 100, color=fs.Q_COLOURS[q])
     cum = np.cumsum(P["share"]) * 100
-    ax.annotate(f"top 3 axes: {cum[2]:.0f}%   top {N_SHOW}: {cum[N_SHOW - 1]:.0f}%   "
-                f"all {q}: {cum[-1]:.0f}%\nregion-specific noise: {P['noise_share'] * 100:.0f}%",
-                (0.98, 0.96), xycoords="axes fraction", ha="right", va="top",
-                fontsize=8, color=fs.INK_2)
-    ax.set_xticks(x)
-    ax.set_xlabel("axis (largest first)")
-    ax.set_ylabel("% of variation beyond age")
-    ax.legend(loc="center right", fontsize=7.5)
-    fs.panel_letter(ax, "A", "How much variation does each axis carry?")
+    ax.annotate(f"top 3: {cum[2]:.0f}%  ·  top {N_SHOW}: {cum[N_SHOW - 1]:.0f}%  ·  "
+                f"all {q}: {cum[-1]:.0f}%\nregion-specific: {P['noise_share'] * 100:.0f}%",
+                (0.98, 0.98), xycoords="axes fraction", ha="right", va="top",
+                fontsize=fs.NOTE_SIZE)
+    ax.set_xticks(x[::2])
+    ax.set_xlabel("axis (largest first)"); ax.set_ylabel("% of variation")
+    fs.panel_title(ax, "A", "Size of each axis")
 
-    # B: what is each axis made of?
-    ax = fig.add_subplot(gs[0, 1])
+    # B: what each axis is made of
+    ax = axes[0, 1]
     T, cols = lobe_table(P["L"], N_SHOW)
     vmax = np.abs(T).max()
     im = ax.imshow(T, cmap=fs.DIVERGING, vmin=-vmax, vmax=vmax, aspect="auto")
     ax.set_yticks(range(N_SHOW), [f"axis {j + 1}" for j in range(N_SHOW)])
-    ax.set_xticks(range(len(cols)), [c[1] for c in cols], rotation=60, ha="right",
-                  fontsize=7)
+    ax.set_xticks(range(len(cols)), [c[1] for c in cols], rotation=90)
     for b in (5.5, 11.5):
-        ax.axvline(b, color=fs.SURFACE, lw=3)
+        ax.axvline(b, color="white", lw=3)
     for m, meas in enumerate(MEASURES):
-        ax.text(m * 6 + 2.5, -0.85, MEASURE_LABEL[meas], ha="center", va="bottom",
-                fontsize=8, color=fs.INK_2)
-    ax.grid(False)
-    for s in ax.spines.values():
-        s.set_visible(False)
-    ax.tick_params(length=0)
-    pos = ax.get_position()
-    cax = fig.add_axes([pos.x0 + pos.width * 0.25, pos.y0 - 0.115, pos.width * 0.5, 0.012])
-    cb = fig.colorbar(im, cax=cax, orientation="horizontal")
-    cb.outline.set_visible(False)
-    cb.ax.tick_params(labelsize=7, colors=fs.INK_MUTED, length=0)
-    cb.set_label("mean loading in lobe (SD per SD of axis score)", fontsize=7.5,
-                 color=fs.INK_2)
-    fs.panel_letter(ax, "B", "What is each axis made of?")
-    ax.texts[-1].set_y(1.17); ax.texts[-2].set_y(1.17)
+        ax.text(m * 6 + 2.5, -0.7, MEASURE_LABEL[meas], ha="center", va="bottom",
+                fontsize=fs.NOTE_SIZE)
+    _heatmap_frame(ax)
+    ax.set_title("B   Content of each axis", pad=30)
+    cb = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.03)
+    cb.outline.set_linewidth(0.6)
+    cb.set_label("mean loading in lobe", fontsize=fs.NOTE_SIZE)
 
-    # D: what does each axis relate to? (bottom right)
-    ax = fig.add_subplot(gs[1, 1])
+    # C: whether the axes stay the same as q changes
+    ax = axes[1, 0]
+    n = min(8, q)
+    styles = {25: ("-", "s"), 5: ("--", "D")}
+    for o in others:
+        ls, m = styles.get(o["q"], (":", "o"))
+        nn = min(n, o["q"])
+        y = best_match(P["L"], o["L"], nn)
+        ax.plot(np.arange(1, nn + 1), y, color=fs.Q_COLOURS[o["q"]], ls=ls, marker=m,
+                markersize=6, markeredgecolor="white", markeredgewidth=0.5)
+    fs.reference_line(ax, 0.9)
+    ax.set_ylim(0, 1.05); ax.set_xlim(0.5, n + 0.5)
+    ax.set_xticks(range(1, n + 1))
+    ax.set_xlabel(f"axis of the q = {q} model"); ax.set_ylabel("similarity (|cos|)")
+    fs.panel_title(ax, "C", "Stability across q")
+
+    # D: what each axis relates to
+    ax = axes[1, 1]
     r, r_crit = correlates(P["scores"], coh, N_SHOW)
     rmax = max(0.3, np.nanmax(np.abs(r)))
     im = ax.imshow(r, cmap=fs.DIVERGING, vmin=-rmax, vmax=rmax, aspect="auto")
     for j in range(r.shape[0]):
         for c in range(r.shape[1]):
             v = r[j, c]
-            ax.text(c, j, f"{v:+.2f}", ha="center", va="center", fontsize=7.5,
+            ax.text(c, j, f"{v:+.2f}", ha="center", va="center", fontsize=fs.VALUE_SIZE,
                     color=ink_on(fs.DIVERGING((v + rmax) / (2 * rmax))),
                     fontweight="bold" if abs(v) >= r_crit else "normal")
     ax.set_yticks(range(N_SHOW), [f"axis {j + 1}" for j in range(N_SHOW)])
-    ax.set_xticks(range(len(COVARIATES)), list(COVARIATES), rotation=30, ha="right",
-                  fontsize=7.5)
-    ax.grid(False)
-    for s in ax.spines.values():
-        s.set_visible(False)
-    ax.tick_params(length=0)
-    ax.text(0.0, -0.36, f"correlation of infants' axis scores with each variable; bold = "
-            f"|r| ≥ {r_crit:.2f} (Bonferroni over {r.size} tests). Age at scan is already "
-            "modelled by the trajectories, so its column should be ~0.",
-            transform=ax.transAxes, fontsize=7, color=fs.INK_2, va="top", wrap=True)
-    fs.panel_letter(ax, "D", "What does each axis relate to?")
+    ax.set_xticks(range(len(COVARIATES)), list(COVARIATES), rotation=40, ha="right")
+    _heatmap_frame(ax)
+    fs.panel_title(ax, "D", "Correlates of each axis")
+    cb = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.03)
+    cb.outline.set_linewidth(0.6)
+    cb.set_label("correlation r", fontsize=fs.NOTE_SIZE)
 
-    # C: are the axes the same when q changes? (bottom left)
-    ax = fig.add_subplot(gs[1, 0]); fs.tidy(ax)
-    n = min(8, q)
+    # shared legend for the q encodings in A and C
+    handles = []
     for o in others:
-        m, col = marks.get(o["q"], ("s", fs.NEUTRAL))
-        nn = min(n, o["q"])
-        y = best_match(P["L"], o["L"], nn)
-        ax.plot(np.arange(1, nn + 1), y, color=col, lw=1.6, zorder=2)
-        ax.scatter(np.arange(1, nn + 1), y, marker=m, s=26, color=col, zorder=3,
-                   edgecolors=fs.SURFACE, linewidths=0.5)
-        ax.annotate(f"vs q = {o['q']}", (nn, y[-1]), xytext=(6, 0),
-                    textcoords="offset points", fontsize=7.5, color=fs.INK_2, va="center")
-    ax.axhline(0.9, color=fs.INK_MUTED, lw=1, ls=(0, (4, 2)))
-    ax.annotate("≥ 0.9: essentially the same pattern", (0.02, 0.9),
-                xycoords=("axes fraction", "data"), xytext=(0, 4),
-                textcoords="offset points", fontsize=7.5, color=fs.INK_2)
-    ax.set_ylim(0, 1.05); ax.set_xlim(0.5, n + 1.6)
-    ax.set_xticks(range(1, n + 1))
-    ax.set_xlabel(f"axis of the q = {q} model")
-    ax.set_ylabel("similarity to best-matching axis (|cos|)")
-    fs.panel_letter(ax, "C", "Do the axes stay the same as q changes?")
-
-    fig.suptitle("Within-population axes of variation: which ones matter?",
-                 x=0.07, y=0.975, ha="left", fontsize=11, color=fs.INK)
-    fig.text(0.07, 0.94, f"one-group model (K = 1), q = {q}, fitted on all {len(coh)} "
-             "training infants · axes ordered by size and signed so higher = more of the "
-             "measures overall", ha="left", fontsize=8, color=fs.INK_2)
-    p = OUT / "fig3_axes_overview.png"
-    fig.savefig(p, bbox_inches="tight"); plt.close(fig)
-    return p
+        ls, m = styles.get(o["q"], (":", "o"))
+        handles.append(Line2D([], [], color=fs.Q_COLOURS[o["q"]], ls=ls, marker=m,
+                              label=f"C: compared with q = {o['q']}"))
+    axes[1, 0].legend(handles=handles, loc="lower left", handlelength=2.2)
+    fig.text(0.06, 0.035, f"One-group model (K = 1), q = {q}, all {len(coh)} training infants; "
+             "axes ordered by size and signed so higher = more of the measures.\n"
+             f"D: bold = |r| ≥ {r_crit:.2f} (Bonferroni, {r.size} tests); age at scan is "
+             "modelled by the trajectories, so its column is ~0.",
+             fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY, va="top")
+    return fs.save_figure(fig, OUT / "fig3_axes_overview")
 
 
 def fig_maps(P, n_axes=3):
@@ -224,45 +210,34 @@ def fig_maps(P, n_axes=3):
 
     R = P["L"].reshape(90, 3, -1)
     vmax = np.abs(R[:, :, :n_axes]).max()
-    fig, axes = plt.subplots(n_axes, 3, figsize=(9.6, 3.3 * n_axes))
-    fig.subplots_adjust(wspace=0.04, hspace=0.18, left=0.13, right=0.98, top=0.9, bottom=0.1)
+    fig, axes = plt.subplots(n_axes, 3, figsize=fs.FIGURE_SIZES["full_page"])
+    fig.subplots_adjust(wspace=0.02, hspace=0.08, left=0.12, right=0.99, top=0.93, bottom=0.12)
     for j in range(n_axes):
         for m, meas in enumerate(MEASURES):
             ax = axes[j, m]
-            ax.contourf(xw, yw, proj, levels=[0.5, 1.5], colors=[fs.GRID], zorder=0)
-            ax.contour(xw, yw, proj, levels=[0.5], colors=[fs.PANEL_EDGE], linewidths=0.8)
+            ax.contourf(xw, yw, proj, levels=[0.5, 1.5], colors=[fs.NEUTRAL_GREY], alpha=0.25)
+            ax.contour(xw, yw, proj, levels=[0.5], colors=[fs.NEUTRAL_GREY], linewidths=0.8)
             v = R[:, m, j]
             order = np.argsort(np.abs(v))           # strongest drawn on top
             sc = ax.scatter(cen[order, 0], cen[order, 1], c=v[order], cmap=fs.DIVERGING,
-                            vmin=-vmax, vmax=vmax, s=14 + 70 * np.abs(v[order]) / vmax,
-                            edgecolors=fs.NEUTRAL, linewidths=0.4, zorder=2)
+                            vmin=-vmax, vmax=vmax, s=16 + 80 * np.abs(v[order]) / vmax,
+                            edgecolors=fs.TEXT_MUTED, linewidths=0.4, zorder=2)
             ax.set_aspect("equal"); ax.axis("off")
             if j == 0:
-                ax.set_title(MEASURE_LABEL[meas], loc="center", fontsize=9, color=fs.INK_2)
+                ax.set_title(MEASURE_LABEL[meas], loc="center", fontsize=14)
             if m == 0:
-                ax.text(-0.06, 0.5, f"axis {j + 1}\n{P['share'][j] * 100:.0f}% of\nvariation",
-                        transform=ax.transAxes, ha="right", va="center", fontsize=8.5,
-                        color=fs.INK)
-            if j == 0 and m == 0:
-                ax.text(0.02, 0.02, "L", transform=ax.transAxes, fontsize=7.5, color=fs.INK_MUTED)
-                ax.text(0.98, 0.02, "R", transform=ax.transAxes, fontsize=7.5,
-                        color=fs.INK_MUTED, ha="right")
-                ax.text(0.5, 0.99, "anterior", transform=ax.transAxes, fontsize=7,
-                        color=fs.INK_MUTED, ha="center", va="top")
-    cax = fig.add_axes([0.38, 0.05, 0.36, 0.013])
-    cb = fig.colorbar(sc, cax=cax, orientation="horizontal")
-    cb.outline.set_visible(False)
-    cb.ax.tick_params(labelsize=7.5, colors=fs.INK_MUTED, length=0)
-    cb.set_label("loading: SD change in the measure per SD of axis score", fontsize=8,
-                 color=fs.INK_2)
-    fig.suptitle("Where in the brain the three largest axes sit",
-                 x=0.13, y=0.975, ha="left", fontsize=11, color=fs.INK)
-    fig.text(0.13, 0.945, "view from above, regions at their centroids · red = higher "
-             "when the axis score is higher, blue = lower · dot size = |loading|",
-             ha="left", fontsize=8, color=fs.INK_2)
-    p = OUT / "fig4_axis_maps.png"
-    fig.savefig(p, bbox_inches="tight"); plt.close(fig)
-    return p
+                ax.text(-0.04, 0.5, f"axis {j + 1}\n{P['share'][j] * 100:.0f}%",
+                        transform=ax.transAxes, ha="right", va="center", fontsize=14,
+                        fontweight="bold")
+    axes[0, 0].text(0.02, 0.02, "L", transform=axes[0, 0].transAxes, fontsize=fs.NOTE_SIZE)
+    axes[0, 0].text(0.98, 0.02, "R", transform=axes[0, 0].transAxes, fontsize=fs.NOTE_SIZE,
+                    ha="right")
+    fs.horizontal_colorbar(fig, sc, [0.33, 0.085, 0.4, 0.014],
+                           "loading (SD per SD of axis score)")
+    fig.text(0.12, 0.012, "View from above, anterior up, regions at their centroids.\n"
+             "Red = higher in infants scoring high on the axis, blue = lower; "
+             "dot size = |loading|.", fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY)
+    return fs.save_figure(fig, OUT / "fig4_axis_maps")
 
 
 def main():
@@ -281,7 +256,7 @@ def main():
                              **{f"axis{j + 1}": P["L"][3 * r + m, j] for j in range(PRIMARY_Q)}))
     pd.DataFrame(rows).to_csv(FINAL / f"axes_K1_q{PRIMARY_Q}.csv", index=False)
 
-    fs.apply()
+    fs.apply_style()
     print("variance share per axis (%):", np.round(P["share"] * 100, 1))
     print(f"noise share {P['noise_share'] * 100:.1f}%")
     for j in range(N_SHOW):
@@ -293,7 +268,7 @@ def main():
         print(f"best-match |cos| vs q={o['q']}:",
               np.round(best_match(P["L"], o["L"], min(8, PRIMARY_Q, o["q"])), 2))
     for fn in (lambda: fig_overview(P, others, coh), lambda: fig_maps(P)):
-        print(f"wrote {fn()}")
+        print("wrote " + ", ".join(str(x) for x in fn()))
 
 
 if __name__ == "__main__":

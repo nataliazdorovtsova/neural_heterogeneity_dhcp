@@ -304,6 +304,32 @@ directions to seed the loadings.
 
 ---
 
+## D13. Figures follow the project style guide (Wong palette, serif)
+
+*2026-10-16.* All figures now use Natalia's figure style guide in place of the
+proposal-figure styling (S12). The guide names a `geodesic_style` package that
+is not installed on the cluster, so `figstyle.py` implements it directly,
+mirroring HMM_MEG/analysis/viz/style.py. That means the Wong palette, serif
+type at 16/14/11 pt, L-shaped axes, the four standard sizes, grey dashed
+reference lines, rounded-top bars with thin black edges, and PNG (150 DPI) +
+PDF output.
+
+Colours carry fixed meanings across figures:
+- each K has its own Wong colour and marker;
+- preterm is vermillion and term (the reference group) is neutral grey;
+- ordered quantities (age, q) use Blues;
+- signed quantities (loadings, correlations) use RdBu_r, red = higher.
+
+Wong defines no continuous scales; Blues and RdBu_r follow the HMM_MEG choice.
+
+Layout changes this required:
+- the model-selection figure is two panels (double column), and the
+  group-collapse panel became its own single-column figure (fig2b);
+- the region-profile heatmap is split by hemisphere so 11 pt region names fit;
+- panel titles are the guide's 16 pt bold titles, and notes are 11 pt.
+
+---
+
 ## Open — needs a decision or an answer
 - **Extend the q grid for K = 1** (S15): held-out lpd still rises at q = 25
   (+84.5 per infant). Candidates q = 35, 50, 70. Each K = 1 spec costs
