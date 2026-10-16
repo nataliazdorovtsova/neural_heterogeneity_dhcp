@@ -20,6 +20,7 @@ bctpy==0.6.1
 # Neuroimaging I/O and brain maps
 nibabel==5.3.2
 nilearn==0.10.4
+scikit-image==0.24.0    # marching cubes for the brain surface renders (make_brain_figures)
 
 # Model comparison / cross-validation utilities
 scikit-learn==1.5.2

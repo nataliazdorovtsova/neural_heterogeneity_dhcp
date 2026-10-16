@@ -28,9 +28,19 @@ M = splines.M_DEFAULT
 VARIANT = "perbin25_mst"
 CLOCK = "pma"
 
+# Appended 2026-10-16 (indices 35-37): at K = 1 the held-out score was still
+# rising at q = 25 (SUPPLEMENT S15). Appended, not inserted, so that existing
+# array indices keep pointing at the same specifications.
+EXTRA_K1_Q = (35, 50, 70)
+
 SPECS = [dict(K=K, q=q, M=M, clock=CLOCK, variant=VARIANT,
               covariance_sharing="group_specific", trajectory="group_smooth")
-         for K in K_GRID for q in Q_GRID]
+         for K in K_GRID for q in Q_GRID] + \
+        [dict(K=1, q=q, M=M, clock=CLOCK, variant=VARIANT,
+              covariance_sharing="group_specific", trajectory="group_smooth")
+         for q in EXTRA_K1_Q]
+
+PERINFANT = paths.RESULTS / "perinfant"
 
 
 def spec_name(s):
@@ -61,6 +71,7 @@ def run(spec, verbose=True):
                   rank=splines.penalty_rank(spec["M"]))
 
     per_fold, n_restarts_used = [], 0
+    ids, fold_of, lpd = [], [], []
     t0 = time.time()
     for f in sorted(np.unique(folds)):
         fit_idx, out_idx = np.where(folds != f)[0], np.where(folds == f)[0]
@@ -84,7 +95,10 @@ def run(spec, verbose=True):
         best_obj = float(obj[b])
         tr = np.asarray(traces)[b]
         converged = abs(tr[-1] - tr[-2]) / max(abs(best_obj), 1.0) < 1e-6
-        score = float(mfa.log_predictive_density(Xo, Bo, best))
+        lpd_i = np.asarray(mfa.pointwise_log_density(Xo, Bo, best))
+        score = float(lpd_i.sum())
+        ids.append(coh.dhcp_id.values[out_idx]); fold_of.append(np.full(len(out_idx), f))
+        lpd.append(lpd_i)
         resp = np.asarray(mfa.responsibilities(Xo, Bo, best))
         per_fold.append(dict(fold=int(f), n_fit=len(fit_idx), n_out=len(out_idx),
                              penalised_loglik=best_obj, heldout_lpd=score,
@@ -96,7 +110,9 @@ def run(spec, verbose=True):
 
     total = sum(d["heldout_lpd"] for d in per_fold)
     elapsed = time.time() - t0
-    return dict(per_fold=per_fold, total_heldout_lpd=total,
+    per_infant = dict(dhcp_id=np.concatenate(ids).astype(str),
+                      fold=np.concatenate(fold_of), lpd=np.concatenate(lpd))
+    return per_infant, dict(per_fold=per_fold, total_heldout_lpd=total,
                 mean_heldout_lpd_per_infant=total / sum(d["n_out"] for d in per_fold),
                 all_converged=all(d["converged"] for d in per_fold),
                 successful_restarts=n_restarts_used,
@@ -119,14 +135,15 @@ def main():
         return
     spec = SPECS[a.index]
     print(f"[{a.index}] {spec_name(spec)}")
-    res = run(spec)
-    if res is None:
+    out = run(spec)
+    if out is None:
         print("   FAILED: no initialisation produced a finite fit")
         return
+    per_infant, res = out
     print(f"   total held-out lpd {res['total_heldout_lpd']:.1f}  "
           f"({res['seconds']:.0f}s, {res['successful_restarts']}/{N_INIT*5} restarts usable)")
 
-    out = prov.snapshot(
+    rec = prov.snapshot(
         name=spec_name(spec), config=dict(spec, n_init=N_INIT, n_iter=N_ITER,
                                           seed_rule="10000*fold + restart"),
         results=res,
@@ -137,7 +154,11 @@ def main():
         ),
         inputs=[paths.RESULTS / "features" / f"{VARIANT}.npz",
                 paths.RESULTS / "cohort" / "cohort.csv"])
-    print(f"   provenance -> {out.name}")
+    # Each infant's held-out log density, for paired comparisons between models
+    # (scripts/compare_models.py). Named after the provenance record it belongs to.
+    PERINFANT.mkdir(parents=True, exist_ok=True)
+    np.savez(PERINFANT / f"{rec.stem}.npz", **per_infant)
+    print(f"   provenance -> {rec.name}; per-infant scores -> perinfant/{rec.stem}.npz")
 
 
 if __name__ == "__main__":

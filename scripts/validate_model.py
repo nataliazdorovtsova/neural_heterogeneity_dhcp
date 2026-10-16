@@ -110,6 +110,8 @@ def check_selection():
             if float(trace[-1]) > best_obj:
                 best_obj, best = float(trace[-1]), p
         scores[K] = float(mfa.log_predictive_density(Xte, Bte, best))
+        pw = np.asarray(mfa.pointwise_log_density(Xte, Bte, best))
+        assert np.isclose(pw.sum(), scores[K], rtol=0, atol=1e-6), "pointwise scores do not sum"
         print(f"   K={K}: held-out log predictive density {scores[K]:11.1f}")
     chosen = max(scores, key=scores.get)
     print(f"   selected K = {chosen} (generated with K = 2)")

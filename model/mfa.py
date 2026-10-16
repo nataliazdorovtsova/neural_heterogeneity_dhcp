@@ -64,10 +64,9 @@ def _woodbury(W, psi):
     return WtPinv, G, logdet_C
 
 
-def e_step(X, B, p: Params):
-    """Responsibilities, conditional score means, and the observed log likelihood."""
+def _components(X, B, p: Params):
+    """Per-group log joint densities (K, N), conditional score means and G."""
     K, M, D = p.beta.shape
-    q = p.W.shape[2]
 
     mu = jnp.einsum("nm,kmd->knd", B, p.beta)                  # (K, N, D)
     e = X[None] - mu                                           # (K, N, D)
@@ -78,6 +77,12 @@ def e_step(X, B, p: Params):
 
     quad = (e ** 2 / p.psi[:, None, :]).sum(-1) - (y * m).sum(-1)   # (K, N)
     log_comp = -0.5 * (D * LOG2PI + logdet_C[:, None] + quad) + p.log_pi[:, None]
+    return log_comp, m, G
+
+
+def e_step(X, B, p: Params):
+    """Responsibilities, conditional score means, and the observed log likelihood."""
+    log_comp, m, G = _components(X, B, p)
     ll_i = logsumexp(log_comp, axis=0)                         # (N,)
     r = jnp.exp(log_comp - ll_i[None, :])                      # (K, N)
     return r, m, G, ll_i.sum()
@@ -194,6 +199,13 @@ def log_predictive_density(X, B, p: Params):
     """Sum of log mixture densities — the held-out model-selection score."""
     _, _, _, ll = e_step(jnp.asarray(X), jnp.asarray(B), p)
     return ll
+
+
+def pointwise_log_density(X, B, p: Params):
+    """(N,) log mixture density of each observation; sums to log_predictive_density.
+    Kept per infant so that two models can be compared on the same infants."""
+    log_comp, _, _ = _components(jnp.asarray(X), jnp.asarray(B), p)
+    return logsumexp(log_comp, axis=0)
 
 
 def responsibilities(X, B, p: Params):
