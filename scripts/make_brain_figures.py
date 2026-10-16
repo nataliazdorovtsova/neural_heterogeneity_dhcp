@@ -51,7 +51,8 @@ NONSIG = np.array(to_rgb("#E2E2E2"))           # loading whose interval includes
 BORDER_DARKEN = 0.7
 MESH_CACHE = paths.RESULTS / "final" / "brain_mesh.npz"
 LABEL_SMOOTH = 1.0                # voxels: smoothing of each region's mask for labelling
-LABEL_MIN = 0.12                  # below this, a vertex is outside every region
+UNION_SMOOTH = 1.5                # voxels: smoothing of the all-regions mask...
+UNION_MIN = 0.12                  # ...below which a vertex is outside every region
 UP = np.array([0.0, 0.0, 1.0])
 
 
@@ -124,7 +125,12 @@ def _vertex_labels(v_vox, lab, labels):
         val = ndimage.map_coordinates(sm, v_vox.T, order=1)
         better = val > best
         best[better], out[better] = val[better], l
-    out[best < LABEL_MIN] = 0
+    # Whether a vertex is in any region at all is decided by a smoothed union of
+    # the hemisphere's regions, so the border with unlabelled tissue (callosum,
+    # brainstem) is a smooth curve too. Medial cortex sitting slightly back from
+    # the midline cut still reaches the threshold.
+    union = ndimage.gaussian_filter(np.isin(lab, list(labels)).astype(np.float32), UNION_SMOOTH)
+    out[ndimage.map_coordinates(union, v_vox.T, order=1) < UNION_MIN] = 0
     return out
 
 
@@ -133,11 +139,11 @@ def _hemisphere_mesh(mask, lab, aff, mid, hemi):
     from nibabel.affines import apply_affine
     x = np.arange(mask.shape[0])[:, None, None]
     keep = (x < mid) if hemi == "L" else (x >= mid)
-    vol = ndimage.gaussian_filter((mask & keep).astype(np.float32), 1.0)
+    vol = ndimage.gaussian_filter((mask & keep).astype(np.float32), 1.3)
     v, f, _, _ = marching_cubes(vol, 0.5)
-    v = _taubin(v, f, iters=10)
+    v = _taubin(v, f, iters=25)
     v, f = _subdivide(v, f)
-    v = _taubin(v, f, iters=4)
+    v = _taubin(v, f, iters=10)
     f = _outward(v, f)
     vl = _vertex_labels(v, lab, range(1, 91, 2) if hemi == "L" else range(2, 91, 2))
     return apply_affine(aff, v), f, vl
@@ -215,13 +221,21 @@ def draw_deep_slice(ax, lab, t2, colours, k, up=4):
         best[better], lab_up[better] = sm[better], l
     lab_up[best < 0.35] = 0
     g = np.clip(bg / np.percentile(t2[t2 > 0], 99), 0, 1)
-    rgb = np.where((bg > 0)[..., None], (0.25 + 0.6 * g)[..., None] * np.ones(3), 1.0)
-    on = lab_up > 0
+    # a smooth brain outline: the raw 1 mm mask edge would be a staircase
+    inside = ndimage.zoom(ndimage.gaussian_filter((t2[:, :, k] > 0).astype(np.float32), 1.0),
+                          up, order=1) > 0.65
+    # the template's skull-stripped edge is dark and speckled; even it out
+    rim = inside & ~ndimage.binary_erosion(inside, iterations=3 * up)
+    g = np.where(rim, np.maximum(g, 0.6), g)
+    rgb = np.where(inside[..., None], (0.25 + 0.6 * g)[..., None] * np.ones(3), 1.0)
+    on = (lab_up > 0) & inside
     rgb[on] = 0.12 * rgb[on] + 0.88 * colours[lab_up[on] - 1]
     edge = np.zeros_like(on)
     for sh in ((1, 0), (0, 1)):
         edge |= (lab_up != np.roll(lab_up, sh, axis=(0, 1))) & on
     rgb[edge] *= BORDER_DARKEN
+    outline = inside & ~ndimage.binary_erosion(inside, iterations=2)
+    rgb[outline] = 0.45
     img = np.flipud(np.transpose(rgb, (1, 0, 2)))     # anterior up, right on the right
     rows, cols = np.where(np.any(img < 0.999, -1))
     img = img[rows.min():rows.max() + 1, cols.min():cols.max() + 1]
