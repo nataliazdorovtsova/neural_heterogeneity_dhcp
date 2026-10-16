@@ -79,7 +79,7 @@ def main():
     cos_ab = np.abs((LA / np.linalg.norm(LA, axis=0) * (LB / np.linalg.norm(LB, axis=0))).sum(0))
 
     OUT.mkdir(parents=True, exist_ok=True)
-    np.savez(OUT / f"split{a.split}.npz", cos_ab=cos_ab, cos_full_a=cos_full_a,
+    np.savez(OUT / f"split{a.split}.npz", LA=LA, LB=LB, cos_ab=cos_ab, cos_full_a=cos_full_a,
              cos_full_b=cos_full_b, n_a=int(in_a.sum()), n_b=int((~in_a).sum()),
              converged=np.array([conv["A"], conv["B"]]))
     print(f"split {a.split}: halves {in_a.sum()}/{(~in_a).sum()}, converged {conv}, "

@@ -58,6 +58,20 @@ def main():
     cos_ab = np.array([s["cos_ab"] for s in splits])                 # (n_split, N_MATCH)
     chance = chance_cos()
 
+    # Axes of similar size can mix between fits, which lowers the axis-by-axis
+    # match even when the space they span replicates. So also compare blocks:
+    # mean cos^2 of the principal angles between the two halves' subspaces
+    # (1 = same subspace; chance for a k-dim block in 270 dims is about k/270).
+    blocks = {"1": [0], "2": [1], "3": [2], "1-3": [0, 1, 2], "4-8": [3, 4, 5, 6, 7]}
+    sub = {}
+    for name, cols in blocks.items():
+        vals = []
+        for sp in splits:
+            Qa, _ = np.linalg.qr(sp["LA"][:, cols]); Qb, _ = np.linalg.qr(sp["LB"][:, cols])
+            vals.append(float(np.mean(np.linalg.svd(Qa.T @ Qb, compute_uv=False) ** 2)))
+        sub[name] = dict(median=round(float(np.median(vals)), 3), min=round(float(np.min(vals)), 3),
+                         chance=round(len(cols) / 270, 3))
+
     summary = dict(
         q=Q, n_permutations=int(len(null)), permutations_converged=int(null_conv.sum()),
         axis_variance=S2.round(3).tolist(), axis_share_pct=(100 * S2 / total).round(2).tolist(),
@@ -66,6 +80,7 @@ def main():
         n_splits=int(len(cos_ab)), split_half_median=np.median(cos_ab, 0).round(3).tolist(),
         split_half_min=cos_ab.min(0).round(3).tolist(),
         chance_cos_95th=np.percentile(chance, 95, axis=0).round(3).tolist(),
+        subspace_overlap=sub,
     )
     (SIG / "axes_summary.json").write_text(json.dumps(summary, indent=2))
     print(json.dumps(summary, indent=2))
