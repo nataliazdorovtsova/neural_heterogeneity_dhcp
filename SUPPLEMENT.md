@@ -62,7 +62,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Anatomy of the axis tail | what do axes beyond 3 encode? | increasingly local: within-region coupling 33× chance in axes 21–70 | S23 |
 | Split-half replication at q = 70 | does the three-axis conclusion hold in the selected model? | axes 1–3: 0.91 / 0.80 / 0.73; tail replicates as blocks only | S23 |
 | Measure robustness to thresholding | which measures depend on preprocessing? | clustering 0.22; communicability 0.84; strength 0.92 | S24 |
-| Measure redundancy and communality | does communicability add information? | |r| = 0.77 with strength; 5% of its variance on axes 1–3 | S24 |
+| Measure redundancy and communality | does communicability add information? | \|r\| = 0.77 with strength; 5% of its variance on axes 1–3 | S24 |
 
 ---
 
@@ -976,7 +976,7 @@ fits converged).
 
 | axis | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| median |cos| | 0.91 | 0.80 | 0.73 | 0.48 | 0.40 | 0.40 | 0.31 | 0.28 | 0.28 | 0.21 |
+| median \|cos\| | 0.91 | 0.80 | 0.73 | 0.48 | 0.40 | 0.40 | 0.31 | 0.28 | 0.28 | 0.21 |
 | worst split | 0.78 | 0.70 | 0.57 | 0.25 | 0.21 | 0.19 | 0.06 | 0.07 | 0.16 | 0.02 |
 
 | block | subspace overlap (median) | worst | chance |
