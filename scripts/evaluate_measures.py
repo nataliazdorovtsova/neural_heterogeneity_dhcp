@@ -50,7 +50,7 @@ LABEL = {"strength": "strength", "log_clustering": "clustering", "communicabilit
 
 
 def new_measures(W):
-    W = np.asarray(W, float)
+    W = np.array(W, dtype=float)                                 # copy: the stack is memory-mapped read-only
     np.fill_diagonal(W, 0)
     L = np.where(W > 0, 1.0 / np.where(W > 0, W, 1), 0)        # lengths for path measures
     n = len(W)
