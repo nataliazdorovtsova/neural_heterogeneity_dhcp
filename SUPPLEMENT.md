@@ -37,6 +37,8 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S20 | Parametric bootstrap of the selected model | loading and axis-size intervals |
 | S21 | Brain surface renders | how the maps are drawn, atlas check |
 | S22 | Compute ledger | core-hours for every run |
+| S23 | What the axis tail encodes; split-half at q = 70 | why interpretation stops at three axes |
+| S24 | Nodal measures: robustness, redundancy, shape | whether to keep communicability; clustering's fragility |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -57,6 +59,10 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Split-half replication, 10 splits | do axes reproduce in independent infants? | axes 1–3 yes (0.91, 0.81, 0.74); 4–8 weakly | S19 |
 | Parametric bootstrap, 200 replicates | how precise are loadings and axis sizes? | 64–78% of loadings exclude zero (axes 1–8) | S20 |
 | Display vs connectome atlas centroids | are regions drawn in the right place? | r = 0.999 / 0.996 / 0.994 | S21 |
+| Anatomy of the axis tail | what do axes beyond 3 encode? | increasingly local: within-region coupling 33× chance in axes 21–70 | S23 |
+| Split-half replication at q = 70 | does the three-axis conclusion hold in the selected model? | axes 1–3: 0.91 / 0.80 / 0.73; tail replicates as blocks only | S23 |
+| Measure robustness to thresholding | which measures depend on preprocessing? | clustering 0.22; communicability 0.84; strength 0.92 | S24 |
+| Measure redundancy and communality | does communicability add information? | |r| = 0.77 with strength; 5% of its variance on axes 1–3 | S24 |
 
 ---
 
@@ -924,4 +930,122 @@ Core-hours from SLURM accounting (CPUTimeRAW: wall time × allocated CPUs).
 The bootstrap was costed in advance for q = 15. The selection then chose
 q = 70, which made each refit take about 28 minutes and the run about 4× the
 estimate. Future runs should be costed after the selection is known.
+
+---
+
+## S23 What the axis tail encodes; split-half replication at q = 70
+
+*Produced by: `scripts/characterise_tail.py` (jobs 4281652, 4282578) and
+`scripts/split_half.py --q 70` (job 4281650). Model: K = 1, q = 70.
+Figure: `fig9_tail_structure`.*
+
+**Anatomy of each axis block.** Each block of axes implies a correlation
+between every pair of the 270 coordinates (region × measure). The pairs are
+grouped by anatomical relation:
+- **within region:** a region's own three measures;
+- **mirror:** a region and its homologue in the other hemisphere;
+- **neighbour:** regions that touch in the connectome atlas, within 1 mm;
+- **distant:** everything else.
+
+For each block, the share of its squared implied correlation in each group is
+compared with each group's share of pairs, which is what an evenly spread
+block would give.
+
+| | within region | mirror | neighbour | distant | local total |
+|---|---|---|---|---|---|
+| share of pairs (chance) | 0.7% | 1.1% | 9.9% | 88.2% | 11.8% |
+| age-detrended data | 10.2% | 6.0% | 19.9% | 63.9% | 36.1% |
+| axes 1–3 (15.7% of variation) | 0.4% (0.6×) | 2.0% (1.8×) | 12.3% (1.2×) | 85.2% | 14.8% |
+| axes 4–8 (11.4%) | 2.5% (3.4×) | 4.1% (3.7×) | 12.4% (1.2×) | 81.0% | 19.0% |
+| axes 9–20 (15.6%) | 5.6% (7.5×) | 5.3% (4.7×) | 15.3% (1.5×) | 73.8% | 26.2% |
+| axes 21–70 (25.8%) | **24.4% (32.9×)** | 2.5% (2.3×) | 13.8% (1.4×) | 59.3% | **40.7%** |
+
+The leading axes are brain-wide: their structure is spread across the brain
+in close to chance proportions, and is if anything depleted within regions,
+because each is dominated by a single measure. Moving down the tail, axes
+become progressively local. In axes 21–70, a quarter of the implied
+correlation lies between the three measures of a single region, 33× chance.
+The data themselves carry this local coupling (36% local against 12% by
+chance), so the tail models real structure. That structure is anatomically
+expected (one region's measures co-vary; homologous and adjacent regions
+co-vary) rather than a set of distinct patterns.
+
+**Split-half replication at q = 70.** As in S19, but for the selected model:
+10 stratified halves, each fitted at q = 70 (3 starts, 1000 sweeps; all 20
+fits converged).
+
+| axis | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| median |cos| | 0.91 | 0.80 | 0.73 | 0.48 | 0.40 | 0.40 | 0.31 | 0.28 | 0.28 | 0.21 |
+| worst split | 0.78 | 0.70 | 0.57 | 0.25 | 0.21 | 0.19 | 0.06 | 0.07 | 0.16 | 0.02 |
+
+| block | subspace overlap (median) | worst | chance |
+|---|---|---|---|
+| axes 1–3 | **0.75** | 0.71 | 0.011 |
+| axes 4–8 | 0.38 | 0.33 | 0.019 |
+| axes 9–20 | 0.27 | 0.24 | 0.044 |
+| axes 21–70 | 0.44 | 0.43 | 0.185 |
+
+Axes 1–3 replicate at q = 70 exactly as at q = 15 (S19). Every tail block
+replicates well above chance as a subspace, but not as individual axes.
+
+**Conclusion.** Interpretation stops at three axes because the axes beyond
+them are local and not individually resolvable, not because they are noise.
+The predictive gain from q > 3 is real, diffuse, local coupling.
+
+---
+
+## S24 Nodal measures: robustness to thresholding, redundancy and shape
+
+*Produced by: `scripts/evaluate_measures.py` (job 4282577). Figure:
+`fig10_measure_evaluation`.*
+
+Question: is communicability too dependent on preprocessing to keep, and
+would another nodal measure carry more distinct information?
+
+All measures were computed for the 569 training infants on the primary
+(per-bin 25% + MST) and the unthresholded networks. Three candidates were
+added to the current three:
+- weighted **betweenness** (lengths 1/w, normalised by (n−1)(n−2));
+- **nodal efficiency** (mean inverse shortest-path length);
+- **eigenvector centrality**.
+
+Every measure's age trend was removed per region (penalised spline, as in the
+model). All correlations are Spearman, taken per region across infants, with
+the median over the 90 regions reported.
+
+| measure | robust to thresholding | \|r\| with strength | \|r\| with clustering | median \|skew\| | zeros | age R² | communality (q = 70) | share on axes 1–3 |
+|---|---|---|---|---|---|---|---|---|
+| strength | 0.92 | — | 0.12 | 0.3 | 0% | 0.53 | 0.95 | 0.25 |
+| clustering (log) | **0.22** | 0.12 | — | 0.3 | 0% | 0.09 | 0.48 | 0.15 |
+| communicability | 0.84 | **0.77** | 0.15 | 0.4 | 0% | 0.13 | 0.88 | **0.05** |
+| betweenness | 0.79 | 0.35 | 0.07 | 1.1 | **29%** | 0.08 | — | — |
+| nodal efficiency | 0.97 | 0.72 | 0.09 | 0.5 | 0% | 0.77 | — | — |
+| eigenvector centrality | 0.89 | 0.37 | 0.15 | 0.8 | 0% | 0.07 | — | — |
+
+*Robust to thresholding:* per-region rank agreement between the thresholded
+and unthresholded networks. *Communality:* the share of a coordinate's
+variance carried by all 70 shared axes, rather than its region-specific term.
+
+Findings:
+1. **Communicability is not fragile to thresholding** (0.84). The fragile
+   measure is **clustering** (0.22): infants are ranked almost differently by
+   it in thresholded and unthresholded networks, and half its variance (0.52)
+   is region-specific. Axis 1 is clustering-dominated and correlates with
+   post-threshold density (S14). Together these make axis 1 the axis most
+   at risk of being a thresholding artefact.
+2. **Communicability is largely regional strength in another form**
+   (|r| = 0.77 within region, after age). Its variance is well captured by
+   the model (communality 0.88), but almost none of it by axes 1–3 (5%). It
+   enters through the local tail, coupled to its own region's strength (the
+   within-region coupling of S23), not as a brain-wide pattern of its own.
+3. **Betweenness** is fairly robust (0.79) and less redundant (0.35), but it
+   is zero-inflated (29% of values exactly 0) and the most skewed. That is a
+   poor fit for a Gaussian factor model without a mixed discrete-continuous
+   treatment.
+4. **Nodal efficiency** is the most robust (0.97), but nearly as redundant
+   with strength as communicability (0.72), and 77% of it is age.
+5. **Eigenvector centrality** is robust (0.89), far less redundant with
+   strength than communicability (0.37), has no zeros and only moderate skew.
+   On these criteria it is the strongest replacement candidate.
 
