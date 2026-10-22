@@ -93,7 +93,7 @@ logs named `%A_%a`), which adds the guardrails:
 | guard | default | why |
 |---|---|---|
 | array size | **refuses above 64 tasks** | forces bundling instead of flooding |
-| concurrent tasks | `%4`, never above 16 | leaves the cluster usable for others |
+| concurrent tasks | `%4`, never above 32 | job count stays modest; the CPU check below is what enforces the 128-CPU cap |
 | peak CPUs | refuses above the chosen QOS's cap | asking for more just queues forever |
 | wall | `7-00:00:00` | can't be raised after submission |
 | CRLF | refuses DOS line endings | `sbatch` would reject them |
@@ -153,6 +153,22 @@ The full 35-spec sweep ran 4 at a time (32 CPUs, 2.7% of the cluster). The
 2026-10-15 rerun (job 4164190) covers the 9 specs that did not converge plus
 2 init crashes: 11 tasks × 8 CPUs, 1000 sweeps each, ≈ 430 core-hours,
 88 CPUs peak.
+
+### 4 CPUs per task, not 8 (measured 2026-10-22)
+
+Bootstrap refits of the K = 1, q = 70 model (warm start + 2 random starts):
+
+| CPUs per task | seconds per replicate | core-seconds per replicate |
+|---|---|---|
+| 8 | 1,560–1,900 | 12,500–15,200 |
+| **4** | **~1,265** | **~5,060** |
+
+The fits gain nothing from 8 threads, and 8-CPU tasks were slower in wall time
+too, plausibly from contention for memory bandwidth. Within the 128-CPU cap,
+32 tasks × 4 CPUs therefore finish about 2.5× sooner, at about 40% of the
+core-hours, than 16 × 8. **Default to 4 CPUs per model-fitting task.** The
+original 200 bootstrap replicates (job 4199434) ran at 8 CPUs, which is why
+they cost 844 core-hours.
 
 ## Housekeeping
 

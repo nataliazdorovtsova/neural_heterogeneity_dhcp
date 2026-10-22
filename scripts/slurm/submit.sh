@@ -31,7 +31,7 @@ set -euo pipefail
 
 PROJECT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 MAX_TASKS=64            # refuse bigger arrays without --force
-MAX_CONCURRENT=16       # never run more than this many at once
+MAX_CONCURRENT=32       # never run more than this many at once (32 x 4 CPUs = the 128-CPU cap)
 CLUSTER_CPUS=1184
 
 NAME=""; TASKS=""; CMD=""; CPUS=8; MEM=16G; TIME=7-00:00:00
