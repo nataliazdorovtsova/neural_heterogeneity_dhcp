@@ -53,6 +53,13 @@ def main():
     thr = np.percentile(null, 95, axis=0)
     beats = S2 > thr
     n_sig = int(np.argmin(beats)) if not beats.all() else Q          # leading run
+    # Permutation p-values, (1 + #null >= observed) / (1 + n_perm):
+    #   p_rank  against the null axis of the same rank (parallel analysis)
+    #   p_fwe   against the largest null axis in each permutation, which controls
+    #           the family-wise error over all Q axes (max-statistic method)
+    n_perm = len(null)
+    p_rank = (1 + (null >= S2[None]).sum(0)) / (1 + n_perm)
+    p_fwe = (1 + (null.max(1)[:, None] >= S2[None]).sum(0)) / (1 + n_perm)
 
     splits = [np.load(f) for f in sorted((SIG / "split_half").glob("split*.npz"))]
     cos_ab = np.array([s["cos_ab"] for s in splits])                 # (n_split, N_MATCH)
@@ -77,6 +84,8 @@ def main():
         axis_variance=S2.round(3).tolist(), axis_share_pct=(100 * S2 / total).round(2).tolist(),
         null_95th=thr.round(3).tolist(), null_max_share_pct=float(100 * null.max() / total),
         axes_beating_null=int(beats.sum()), leading_axes_beating_null=n_sig,
+        p_rank=p_rank.round(4).tolist(), p_fwe=p_fwe.round(4).tolist(),
+        smallest_reportable_p=round(1 / (1 + n_perm), 4),
         n_splits=int(len(cos_ab)), split_half_median=np.median(cos_ab, 0).round(3).tolist(),
         split_half_min=cos_ab.min(0).round(3).tolist(),
         chance_cos_95th=np.percentile(chance, 95, axis=0).round(3).tolist(),
