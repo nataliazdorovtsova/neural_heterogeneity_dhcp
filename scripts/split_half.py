@@ -12,7 +12,8 @@ Standardisation uses the full training set's moments, so the halves are on
 one scale and their loadings are directly comparable. No held-out scoring is
 involved, so this leaks nothing.
 
-Writes results/significance/split_half/split{s}.npz.
+Writes results/significance/split_half/split{s}.npz for q = 15 (the default),
+or results/significance/split_half_q{q}/split{s}.npz for other q.
 """
 
 import argparse
@@ -56,35 +57,41 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", type=int, required=True)
     ap.add_argument("--n-init", type=int, default=5)
+    ap.add_argument("--q", type=int, default=Q)
+    ap.add_argument("--n-match", type=int, default=N_MATCH)
     a = ap.parse_args()
+    out_dir = OUT if a.q == Q else OUT.parent / f"split_half_q{a.q}"
 
     t0 = time.time()
     coh, Xraw = load()
     X, *_ = standardise(Xraw)
     B = splines.basis(age_for(coh, CLOCK))
-    full = np.load(paths.RESULTS / "final" / f"K1_q{Q}.npz")
+    full = np.load(paths.RESULTS / "final" / f"K1_q{a.q}.npz")
     L_full, *_ = principal(full["W"][0], full["psi"][0])
 
     rng = np.random.default_rng(SEED + a.split)
     in_a = halves(coh, rng)
     L, conv = {}, {}
     for name, m in (("A", in_a), ("B", ~in_a)):
-        p, tr, conv[name], _ = fit_best(X[m], B[m], 1, Q, n_init=a.n_init,
+        p, tr, conv[name], _ = fit_best(X[m], B[m], 1, a.q, n_init=a.n_init,
                                         seed_base=SEED + 100 * a.split + (name == "B") * 50)
         L[name], *_ = principal(p.W[0], p.psi[0])
 
-    ia, cos_full_a = match(L_full, L["A"], N_MATCH)
-    ib, cos_full_b = match(L_full, L["B"], N_MATCH)
+    ia, cos_full_a = match(L_full, L["A"], a.n_match)
+    ib, cos_full_b = match(L_full, L["B"], a.n_match)
     LA, LB = L["A"][:, ia], L["B"][:, ib]
     cos_ab = np.abs((LA / np.linalg.norm(LA, axis=0) * (LB / np.linalg.norm(LB, axis=0))).sum(0))
 
-    OUT.mkdir(parents=True, exist_ok=True)
-    np.savez(OUT / f"split{a.split}.npz", LA=LA, LB=LB, cos_ab=cos_ab, cos_full_a=cos_full_a,
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # LA_all / LB_all: every axis of each half in its own size order, for
+    # subspace comparisons of blocks beyond the matched axes.
+    np.savez(out_dir / f"split{a.split}.npz", LA=LA, LB=LB, LA_all=L["A"], LB_all=L["B"],
+             cos_ab=cos_ab, cos_full_a=cos_full_a,
              cos_full_b=cos_full_b, n_a=int(in_a.sum()), n_b=int((~in_a).sum()),
              converged=np.array([conv["A"], conv["B"]]))
     print(f"split {a.split}: halves {in_a.sum()}/{(~in_a).sum()}, converged {conv}, "
           f"{time.time() - t0:.0f}s")
-    print("   |cos| half A vs half B, axes 1-8:", np.round(cos_ab, 2))
+    print(f"   |cos| half A vs half B, axes 1-{a.n_match}:", np.round(cos_ab, 2))
 
 
 if __name__ == "__main__":
