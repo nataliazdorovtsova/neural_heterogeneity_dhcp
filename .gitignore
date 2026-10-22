@@ -8,12 +8,14 @@ env/
 results/
 figures/
 
-# ...except the frozen splits, which must never silently change
-!results/cohort/
-!results/cohort/**
+# results/cohort/ (the frozen splits) is participant-level and stays local too;
+# its checksums are in DATA_PROVENANCE.md so any change is detectable.
 
 # data/ is symlinks to ab15's tree; never commit the targets
 data/
 
 # slurm logs
 logs/
+
+# a colleague's unpublished report: kept locally for reference, never published
+notes/bhaskar_FYR.md

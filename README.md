@@ -28,7 +28,7 @@ and communicability per AAL90 region.
 | `data/` | symlinks to the read-only sources (see below) — nothing original here |
 | `results/` | fitted models, model-comparison tables, derived features |
 | `figures/` | figures |
-| `notes/` | transcriptions of the proposal, methods supplement and ab15's first year report |
+| `notes/` | transcriptions of the proposal and methods supplement (ab15's first year report is kept locally only) |
 | `DECISIONS.md` | running record of analysis choices and why — read this first |
 | `SUPPLEMENT.md` | the evidence behind each choice, write-up ready |
 | `CLUSTER.md` | SLURM conventions and how we stay neighbourly |

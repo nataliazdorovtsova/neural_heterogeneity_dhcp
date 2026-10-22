@@ -79,3 +79,23 @@ other projects and other cohorts, not dHCP:
 None were copied. **Ask ab15 for the actual path** — the folder may be named
 something else, may live outside `/imaging/astle`, or may not be readable with
 current group permissions.
+
+## History rewrite before publication (2026-10-22)
+
+Before the repository was published, the git history was rewritten once:
+- a colleague's unpublished report transcription (`notes/bhaskar_FYR.md`) was
+  removed from every commit; it is kept locally and is now git-ignored;
+- 23 commits authored with the cluster address were re-attributed to the
+  author's own email.
+
+No other file changed: the old and new final trees differ only by that one
+file.
+
+Rewriting changes commit IDs, and every provenance record in
+`results/provenance/` stores the commit it ran on. **`COMMIT_MAP.tsv` maps
+each old commit ID to its new one**, so a record written before the rewrite can
+still be traced to its code. The original history is preserved as a git bundle
+outside the repository
+(`neural_heterogeneity_dhcp_backups/pre_public_rewrite_2026-10-22.bundle`).
+
+Participant-level files (`results/`, `data/`) have never been committed.
