@@ -27,6 +27,36 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S10 | Genetic data coverage | extension sample |
 | S11 | Model implementation is correct | validity of everything downstream |
 | S12 | Figure palettes | colour choices are computed, not eyeballed |
+| S13 | Scores as gain per infant over a null baseline | how model scores are reported |
+| S14 | The within-population axes (K = 1, q = 15) | size, content, stability across q, correlates |
+| S15 | K × q sweep, final (fold totals) | the grid, convergence reruns |
+| S16 | Paired per-infant model comparison and selection | K = 1; q not bracketed (best tested q = 70) |
+| S17 | Validation set, scored once | the selection generalises |
+| S18 | Permutation null (parallel analysis) | every axis is bigger than noise |
+| S19 | Split-half replication | which axes reproduce in independent infants |
+| S20 | Parametric bootstrap of the selected model | loading and axis-size intervals |
+| S21 | Brain surface renders | how the maps are drawn, atlas check |
+| S22 | Compute ledger | core-hours for every run |
+
+**Tests at a glance** — every check run on the model and its outputs:
+
+| test | question | result | § |
+|---|---|---|---|
+| Woodbury / determinant lemma vs dense algebra | is the likelihood computed correctly? | agree to 8 d.p. | S11 |
+| ECM monotonicity | is the fitting algorithm correct? | no decrease in 120 sweeps | S11 |
+| Parameter recovery on simulated data | can the model recover known structure? | ARI 1.000; centres within 5.1% | S11 |
+| Selection recovers the generating K | is the selection criterion biased? | K = 2 recovered | S11 |
+| Per-infant scores sum to the total | is the per-infant refactor correct? | exact (|Δ| < 10⁻⁶) | S11 |
+| Convergence rerun, 250 → 1000 sweeps | were fold scores stable? | lpd changed −152 to +96; no ranking changed | S15 |
+| Axis stability across q (5, 15, 25) | do the leading axes depend on q? | axes 1–3 identical (|cos| ≈ 1.00) | S14 |
+| Covariate correlations (Bonferroni, 42 tests) | are axes technical or biological? | density, motion and age-since-birth links | S14 |
+| Paired per-infant comparison (SE of difference) | which model predicts unseen infants best, beyond noise? | K = 1 at q ≥ 15 (z = 7.6–14.5); K = 2 at q ≤ 5 | S16 |
+| One-standard-error rule | simplest adequate model? | K = 1, q = 70 (grid not bracketed) | S16 |
+| Reserved validation set (scored once) | does the selection generalise? | gain 104.5 vs 106.1 in CV; beats K = 2 by z ≈ 8 | S17 |
+| Permutation null, 100 shuffles | is each axis bigger than noise? | all 15 axes, smallest 0.94% vs null ≤ 0.78% | S18 |
+| Split-half replication, 10 splits | do axes reproduce in independent infants? | axes 1–3 yes (0.91, 0.81, 0.74); 4–8 weakly | S19 |
+| Parametric bootstrap, 200 replicates | how precise are loadings and axis sizes? | 64–78% of loadings exclude zero (axes 1–8) | S20 |
+| Display vs connectome atlas centroids | are regions drawn in the right place? | r = 0.999 / 0.996 / 0.994 | S21 |
 
 ---
 
@@ -431,6 +461,12 @@ at K = 1, 2, 3 and scored by held-out log predictive density on a 20% hold-out:
 The procedure selects K = 2, penalising both the under- and over-specified
 alternatives.
 
+**Per-infant scores** (added 2026-10-16). Model comparison now uses each
+infant's held-out log density (`mfa.pointwise_log_density`), not only fold
+totals. The E-step was refactored to expose these, and the gate was rerun
+before any new fits (job 4199427): all checks above still pass, and the
+per-infant scores sum to the total held-out density to within 10⁻⁶.
+
 ### Run provenance
 
 Every fit writes a JSON record (`results/provenance/`) holding the
@@ -599,3 +635,293 @@ is −218,986.1 (S13).
   optimum (see open items).
 - Compute: 52.7 task wall-hours at 8 CPUs per task ≈ 420 core-hours for the
   full grid, including the reruns.
+
+---
+
+## S16 Paired per-infant model comparison and selection
+
+*Produced by: `scripts/run_spec.py --n-iter 1000` (job 4199428) and
+`scripts/compare_models.py` (job 4199431). 2026-10-16.*
+
+Fold totals (S15) give five numbers per model; they cannot say whether a
+difference exceeds infant-to-infant noise. Every training infant is held out
+exactly once in the 5-fold CV, so two models can be compared on the same 569
+infants: dᵢ = lpdᵢ(model 1) − lpdᵢ(model 2), with SE(Σdᵢ) = √n · sd(d)
+(Vehtari, Gelman & Gabry, 2017).
+
+All K = 1 and K = 2 specifications were refitted at 1000 ECM sweeps (equal
+budgets), plus K = 1 at q = 35, 50, 70 because the score was still rising at 25
+(S15). K ≥ 3 was not rerun: it lost at every q ≥ 5 and collapsed groups (S15).
+Every fold of every specification converged.
+
+| K | q | total held-out lpd | gain per infant | parameters | below best ± SE |
+|---|---|---|---|---|---|
+| 1 | 0 | −197,437.7 | 37.9 | 5,670 | 38,823 ± 1,729 |
+| 1 | 1 | −192,676.7 | 46.2 | 5,940 | 34,062 ± 1,753 |
+| 1 | 2 | −188,012.8 | 54.4 | 6,209 | 29,398 ± 1,736 |
+| 1 | 5 | −183,441.8 | 62.5 | 7,010 | 24,827 ± 1,729 |
+| 1 | 10 | −178,979.4 | 70.3 | 8,325 | 20,365 ± 1,661 |
+| 1 | 15 | −175,866.7 | 75.8 | 9,615 | 17,252 ± 1,591 |
+| 1 | 25 | −170,915.1 | 84.5 | 12,120 | 12,300 ± 1,470 |
+| 1 | 35 | −167,242.5 | 90.9 | 14,525 | 8,628 ± 1,315 |
+| 1 | 50 | −162,731.7 | 98.9 | 17,945 | 4,117 ± 923 |
+| **1** | **70** | **−158,614.9** | **106.1** | 22,155 | — (best) |
+| 2 | 0 | −194,352.6 | 43.3 | 11,341 | 35,738 ± 1,698 |
+| 2 | 1 | −188,555.3 | 53.5 | 11,881 | 29,940 ± 1,819 |
+| 2 | 2 | −184,484.4 | 60.6 | 12,419 | 25,870 ± 1,871 |
+| 2 | 5 | −181,761.0 | 65.4 | 14,021 | 23,146 ± 1,773 |
+| 2 | 10 | −179,054.6 | 70.2 | 16,651 | 20,440 ± 1,647 |
+| 2 | 15 | −177,920.2 | 72.2 | 19,231 | 19,305 ± 1,486 |
+| 2 | 25 | −176,068.5 | 75.4 | 24,241 | 17,454 ± 1,300 |
+
+Parameters = K(MD + Dq − q(q−1)/2 + D) + (K − 1), with M = 20, D = 270.
+
+**One group or two, at each q** (positive favours K = 1):
+
+| q | K1 − K2 | SE | z |
+|---|---|---|---|
+| 0 | −3,085.1 | 320.1 | −9.6 |
+| 1 | −4,121.4 | 477.6 | −8.6 |
+| 2 | −3,528.4 | 423.3 | −8.3 |
+| 5 | −1,680.8 | 267.9 | −6.3 |
+| 10 | +75.2 | 232.7 | +0.3 |
+| 15 | +2,053.4 | 271.9 | +7.6 |
+| 25 | +5,153.4 | 354.7 | +14.5 |
+
+Two groups win decisively when within-group covariance is too poor (q ≤ 5),
+the two tie at q = 10, and one group wins decisively once q ≥ 15. This is
+the substitution the methods plan warns of (§3): groups stand in for missing
+covariance and stop helping once the covariance is adequate.
+
+**Selection.** The rule was fixed before the results: among models whose
+total is within one SE (of the paired difference) of the best, take the one
+with the fewest parameters (Hastie, Tibshirani & Friedman, 2009). The best
+model, **K = 1, q = 70**, is also the only one within 1 SE: each step in q is
+several SEs (q = 50 → 70: +4,117 ± 923, z ≈ 4.5). **The rule therefore selects
+the largest q tested, and the q grid is not bracketed.** Held-out density is
+still rising at q = 70, though with diminishing increments (+7.2 per infant
+from 50 to 70 vs +8.4 from 0 to 1). That suggests the residual covariance has
+many small, real dimensions. It does not mean that 70 interpretable axes
+exist (see S18–S19).
+
+Figure: `fig7_model_comparison`.
+
+---
+
+## S17 Validation set, scored once
+
+*Produced by: `scripts/validate_once.py` (job 4199435). 2026-10-16. The script
+refuses to run again without `--force`; it has not been rerun.*
+
+The 101 reserved infants (ages 29.9–44.4 weeks PMA, all inside the spline
+basis) had not been used for fitting, standardisation, selection or figures.
+The selected model (K = 1, q = 70) and the best model with a different K
+(K = 2, q = 25) were fitted on all 569 training infants (20 restarts, 1000
+sweeps; both converged) and scored once, standardised with the training
+moments.
+
+| | total lpd | gain per infant over null | |
+|---|---|---|---|
+| null baseline | −38,968.9 | 0 | |
+| **K = 1, q = 70 (selected)** | **−28,416.7** | **104.5 ± 7.9** | CV estimate 106.1 |
+| K = 2, q = 25 (runner-up) | −32,022.6 | 68.8 ± 5.3 | CV estimate 75.4 |
+
+Selected minus runner-up: **+3,605.9 ± 445.5** (z ≈ 8.1); 96 of 101 infants
+are better predicted by the selected model.
+
+The selected model's gain on new infants (104.5) matches its cross-validated
+estimate (106.1), so the selection did not overfit the CV. The one-group
+model's advantage over two groups replicates in infants never used for any
+decision.
+
+Fitting note: the K = 2 fit had a restart spread of 392 log-likelihood units
+across 20 starts, i.e. a multimodal likelihood. The K = 1 fit's 20 starts all
+reached the same optimum (spread 0.0).
+
+---
+
+## S18 Permutation null (parallel analysis)
+
+*Produced by: `scripts/permutation_null.py` (job 4199430) and
+`scripts/summarise_axes_significance.py` (job 4199432). Model: K = 1, q = 15.*
+
+Question: would axes this large appear if there were no shared structure? For
+each of 100 permutations:
+1. the fitted age trajectory was removed from the standardised training data;
+2. each of the 270 coordinates' residuals was shuffled independently across
+   infants, which destroys every between-coordinate correlation (the only
+   thing the axes describe) but keeps each coordinate's distribution and age
+   trend;
+3. the trajectory was added back and the q = 15 model refitted (5 starts,
+   1000 sweeps).
+
+All 100 null fits converged. An axis "beats the null" if its variance exceeds
+the 95th percentile of the null variance at the same rank (Horn, 1965).
+
+| | axis 1 | axis 2 | axis 3 | … | axis 15 |
+|---|---|---|---|---|---|
+| observed share of variation beyond age | 6.75% | 4.75% | 3.95% | … | 0.94% |
+| null, 95th percentile | 0.76% | 0.71% | 0.70% | … | 0.51% |
+
+**All 15 axes beat the null.** The largest axis in any of the 100 permutations
+carried 0.78%, below the smallest observed axis (0.94%). There is real
+correlated structure along every axis. Whether each axis is a reproducible
+*pattern* is a separate question (S19).
+
+Figure: `fig8_axis_significance`, panel A.
+
+---
+
+## S19 Split-half replication
+
+*Produced by: `scripts/split_half.py` (jobs 4199429, and 4199764 which also
+saves loadings) and `scripts/summarise_axes_significance.py`. Model: K = 1,
+q = 15.*
+
+Ten random splits of the 569 training infants into halves (284/285),
+stratified by age quartile × preterm status. Each half was fitted on its own
+(5 starts, 1000 sweeps; all 20 fits converged), using the full training set's
+standardisation so the halves share one scale. Each full-data axis was matched
+to one axis in each half by Hungarian assignment on |cosine|, and the two
+halves' matched axes were compared. Chance was simulated by applying the same
+matching to random loading vectors.
+
+**Axis by axis** (|cos| between halves; 1 = identical):
+
+| axis | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| median over 10 splits | **0.91** | **0.82** | **0.74** | 0.48 | 0.44 | 0.38 | 0.34 | 0.34 |
+| worst split | 0.78 | 0.69 | 0.59 | 0.25 | 0.27 | 0.20 | 0.10 | 0.17 |
+| chance (95th percentile) | 0.17 | 0.18 | 0.18 | 0.17 | 0.18 | 0.16 | 0.17 | 0.17 |
+
+**By block.** Axes of similar size (4–8 each carry 1.7–2.8%) can mix between
+fits, which lowers the axis-by-axis match even when the space they span
+replicates. Mean cos² of the principal angles between the two halves'
+subspaces:
+
+| block | median | worst | chance |
+|---|---|---|---|
+| axis 1 | 0.83 | 0.60 | 0.004 |
+| axis 2 | 0.66 | 0.48 | 0.004 |
+| axis 3 | 0.55 | 0.35 | 0.004 |
+| axes 1–3 | **0.76** | 0.74 | 0.011 |
+| axes 4–8 | **0.42** | 0.35 | 0.019 |
+
+Interpretation:
+- **Axes 1–3 are reproducible patterns** in independent sets of ~285 infants.
+- **Axes 4–8 span a real but poorly determined subspace.** It overlaps
+  between halves about 20× more than chance, but at half the sample its
+  individual axes are not stably resolved.
+- Half samples understate full-sample reliability; S20 gives the full-sample
+  view, conditional on the model.
+
+**Consequence for interpretation:** region-level claims are restricted to axes
+1–3. Axes 4 and beyond (including the posterior-cingulate / time-since-birth
+axis 5 of S14) are reported as a block of smaller, less stable structure.
+
+Figure: `fig8_axis_significance`, panel B.
+
+---
+
+## S20 Parametric bootstrap of the selected model
+
+*Produced by: `scripts/bootstrap.py` (job 4199434, 20 tasks × 10) and
+`scripts/summarise_bootstrap.py` (job 4199759). Model: K = 1, q = 70 (the
+selection, S16).*
+
+Following the methods plan (§4), 200 datasets of 569 infants were simulated
+from the fitted model at the observed ages exactly, so the age and prematurity
+distribution matches by construction. Each was refitted from the fitted
+parameters plus two random starts (1000 sweeps); all 200 converged. Each
+replicate's loadings were rotated onto the original principal loadings by
+orthogonal Procrustes before comparison, because the axes are identified only
+up to rotation.
+
+**Axis sizes** (% of variation beyond age, 95% percentile interval):
+
+| axis | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| estimate | 6.82 | 4.83 | 4.10 | 2.88 | 2.45 | 2.19 | 2.02 | 1.87 |
+| 2.5% | 6.21 | 4.57 | 3.76 | 2.82 | 2.45 | 2.24 | 2.05 | 1.89 |
+| 97.5% | 7.83 | 5.53 | 4.66 | 3.38 | 2.89 | 2.55 | 2.39 | 2.16 |
+
+From axis 5 on, the estimate sits at or below the lower percentile. This is
+the known upward bias of bootstrapped sample eigenvalues: re-estimation noise
+adds variance to every axis. The size intervals for axes ≥ 5 should not be
+read as unbiased. A bias-corrected (BCa) interval would be the fix if they are
+reported.
+
+**Loadings.** The share of the 270 region × measure loadings whose 95%
+interval excludes zero:
+
+| axis | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| significant loadings | 195 | 185 | 206 | 210 | 180 | 175 | 179 | 173 |
+| fraction | 0.72 | 0.69 | 0.76 | 0.78 | 0.67 | 0.65 | 0.66 | 0.64 |
+
+These intervals are pointwise: if every loading were truly zero, about 14 of
+270 per axis would exclude zero by chance.
+
+Two caveats:
+- **A parametric bootstrap assumes the model is true.** It measures how
+  precisely loadings are estimated *if* the data come from this model. It does
+  not test whether the patterns reproduce in real data. For axes 4 and beyond,
+  the split-half result (S19) is the more conservative evidence, and the two
+  disagree: the bootstrap says these loadings are precise, while split halves
+  say the axes are not stably resolved at half the sample size. Region-level
+  interpretation therefore follows S19.
+- These intervals exclude model-selection uncertainty (methods plan §4).
+
+The brain maps (S21) grey out loadings whose interval includes zero.
+
+---
+
+## S21 Brain surface renders
+
+*Produced by: `scripts/make_brain_figures.py`. Figures `fig5_axis{1-5}_brain`,
+`fig6_region_profiles`.*
+
+Regions are drawn on the UNC neonatal T2w template using its own AAL90 labels
+(1 mm, RAS), for display only. The connectomes used AAL90 in GA40 space. Both
+atlases use the AAL numbering: their region-centroid layouts correlate at
+r = 0.999 (x), 0.996 (y) and 0.994 (z) across the 90 regions. The connectome
+node index (`data/atlases/AAL90_node_index.csv`, copied from ab15) maps node i
+to label i.
+
+How each hemisphere is rendered:
+1. Its surface is extracted from the template brain mask (Gaussian σ = 1.3
+   voxels; marching cubes).
+2. It is smoothed (Taubin λ = 0.5, μ = −0.53, 25 iterations), subdivided once
+   (~260k triangles per hemisphere) and smoothed again (10 iterations).
+3. Each vertex takes the region whose Gaussian-smoothed mask (σ = 1 voxel) is
+   strongest at that point. Vertices where the smoothed union of the
+   hemisphere's regions falls below 0.12 (σ = 1.5) are left unlabelled.
+
+Triangles are lit by orientation and painted back to front as polygons. No
+image is resampled, so borders are smooth curves rather than voxel steps.
+
+The deep-structure panel is an axial slice through the thalamic centroid at
+4× resolution, with region borders from the same smoothed-mask rule.
+Loadings whose 95% bootstrap interval includes zero (S20) are drawn light
+grey; tissue outside the 90 regions is dark grey.
+
+---
+
+## S22 Compute ledger (CBU cluster)
+
+Core-hours from SLURM accounting (CPUTimeRAW: wall time × allocated CPUs).
+
+| run | jobs | core-hours |
+|---|---|---|
+| K × q sweep, 35 specs, 250 sweeps + 11 reruns at 1000 (S15) | 4132482, 4164190 | ≈ 420 |
+| per-infant rerun, 17 specs at 1000 sweeps (S16) | 4199428 | 309.4 |
+| final fits, selected + runner-up (S17) | 4199433 | 27.2 |
+| permutation null, 100 fits (S18) | 4199430 | 14.2 |
+| split-half, 2 × 10 splits (S19) | 4199429, 4199764 | 7.5 |
+| parametric bootstrap, 200 fits at q = 70 (S20) | 4199434 | **843.9** |
+| figures, summaries, validation, gate | various | < 2 |
+
+The bootstrap was costed in advance for q = 15. The selection then chose
+q = 70, which made each refit take about 28 minutes and the run about 4× the
+estimate. Future runs should be costed after the selection is known.
+

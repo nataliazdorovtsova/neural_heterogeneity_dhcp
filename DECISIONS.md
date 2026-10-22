@@ -330,11 +330,35 @@ Layout changes this required:
 
 ---
 
+## D14. One population (K = 1); q = 70 selected, q not bracketed; interpret axes 1–3
+
+*2026-10-22. Evidence: SUPPLEMENT S16–S20.*
+
+- **K = 1.** On paired per-infant comparison, one group beats two at every
+  q ≥ 15 (z = 7.6 to 14.5) and ties at q = 10. Two groups win only when
+  within-group covariance is too poor (q ≤ 5). This holds on the 101
+  validation infants, scored once: +3,606 ± 446, with 96/101 infants
+  favouring K = 1 (S17).
+- **q = 70 by the pre-set one-SE rule**, but only because it is the largest q
+  tried. The score still rises, and every step is several SEs. The rule cannot
+  bracket q on this grid. q = 70 is the predictive model, and the
+  validation score (104.5 per infant vs 106.1 in CV) shows it does not overfit.
+- **Interpretation is restricted to axes 1–3.** All axes beat the permutation
+  null (S18), but only axes 1–3 replicate in independent halves (S19).
+  Axes 1–3 are identical across q = 5–70, so the choice of q does not change
+  what is interpreted. Axes 4 onwards are reported as a block of smaller,
+  less stable structure.
+
+---
+
 ## Open — needs a decision or an answer
-- **Extend the q grid for K = 1** (S15): held-out lpd still rises at q = 25
-  (+84.5 per infant). Candidates q = 35, 50, 70. Each K = 1 spec costs
-  ~3–6 h on 8 CPUs, so the three cost roughly 150 core-hours. This affects the
-  choice of q only; S14 shows the leading axes are unchanged by q.
+- **How far to take q** (D14). Options: (a) report q = 70 as "at least 70
+  dimensions improve prediction" and stop; (b) extend to q = 100/150 to
+  bracket the optimum, at roughly 400+ core-hours plus refits; or
+  (c) pre-register a practical-significance rule (e.g. stop when a step adds
+  < 1 log unit per infant). The leading axes do not depend on this choice.
+- **BCa intervals for axis sizes** (S20): percentile intervals are biased
+  upward for axes ≥ 5. Needed only if those sizes are reported.
 - **Fixed-density rebuild** (D4) — asked, awaiting ab15.
 - **Sign-off on D10** (log on clustering rather than communicability).
 - **Knot span** — observed PMA is 26.71–45.14; the proposed 26–45 basis
