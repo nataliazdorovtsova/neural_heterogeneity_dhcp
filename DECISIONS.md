@@ -351,6 +351,24 @@ Layout changes this required:
 
 ---
 
+## D15. Initialisation: 20 random starts per fit is sufficient; no further seed checks
+
+*2026-10-22.* Every model is fitted from 20 random starts in each CV fold
+(100 per specification), and from 20 starts for the final fits; seeds are
+fixed and recorded. One-group fits reach a single optimum from all starts
+(spread 0.0 at q = 5, 15, 25, 70). Two-group fits are multimodal (spread 392
+at K = 2, q = 25), so under-optimising K = 2 is a conceivable bias towards
+K = 1. But the K = 1 margins at q ≥ 15 (z = 7.6–14.5) are far larger than a
+better K = 2 optimum could plausibly recover, and the only close case (q = 10,
+a tie) carries no conclusion. Not run, and held in reserve should a reviewer
+ask:
+- more starts for K = 2;
+- repeated CV over new fold partitions;
+- refitting the final models with fresh seeds;
+- a record of how many of 20 starts reach the best K = 2 optimum.
+
+---
+
 ## Open — needs a decision or an answer
 - **How far to take q** (D14). Options: (a) report q = 70 as "at least 70
   dimensions improve prediction" and stop; (b) extend to q = 100/150 to
