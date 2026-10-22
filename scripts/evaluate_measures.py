@@ -82,6 +82,12 @@ def spearman_cols(a, b):
 
 
 def main():
+    import sys
+    if "--figure-only" in sys.argv:
+        r = json.loads((OUT / "measure_evaluation.json").read_text())
+        fs.apply_style()
+        figure(r["measures"], r["n"], r["q"])
+        return
     t0 = time.time()
     coh = pd.read_csv(paths.RESULTS / "cohort" / "cohort.csv")
     tr = coh[coh.in_primary & (coh.split == "train")]
@@ -158,7 +164,12 @@ def figure(out, n, q):
     ax.set_ylim(0, 1.05); ax.set_xlim(-0.6, len(allm) - 0.4)
     ax.set_xticks(x, names, rotation=40, ha="right")
     ax.set_ylabel("|correlation|")
-    ax.legend(loc="upper right")
+    from matplotlib.lines import Line2D
+    ax.legend(handles=[Line2D([], [], marker="o", ls="none", color="white",
+                              markeredgecolor=fs.TEXT_PRIMARY, label="vs strength"),
+                       Line2D([], [], marker="s", ls="none", color="white",
+                              markeredgecolor=fs.TEXT_PRIMARY, label="vs clustering")],
+              loc="upper right")
     fs.panel_title(ax, "B", "Redundant with the others?")
 
     ax = axes[1, 0]
@@ -166,7 +177,7 @@ def figure(out, n, q):
     ax.set_xlim(-0.6, 2.6); ax.set_ylim(0, 1.0)
     fs.rounded_bars(ax, xm, [out[m]["communality_median"] for m in MEASURES],
                     color=colours[:3], value_fmt="{:.2f}")
-    ax.set_xticks(xm, names[:3])
+    ax.set_xticks(xm, names[:3], rotation=40, ha="right")
     ax.set_ylabel("shared variance (communality)")
     fs.panel_title(ax, "C", "Captured by the axes?")
 
