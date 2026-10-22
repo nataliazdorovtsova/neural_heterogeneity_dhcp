@@ -82,20 +82,25 @@ current group permissions.
 
 ## History rewrite before publication (2026-10-22)
 
-Before the repository was published, the git history was rewritten once:
-- a colleague's unpublished report transcription (`notes/bhaskar_FYR.md`) was
-  removed from every commit; it is kept locally and is now git-ignored;
-- 23 commits authored with the cluster address were re-attributed to the
-  author's own email.
+Before the repository was made public, its git history was rewritten so that
+no version of any file contains:
+- planning documents that are not ours to publish, or not yet: transcriptions
+  of the study proposal, the methods supplement (with its review comments) and
+  a colleague's unpublished first year report. These are kept locally in
+  `notes/` and are git-ignored;
+- references to review comments by number, now "raised in review";
+- the name of the restricted access group for the genetic data;
+- a colleague's unpublished project names.
 
-No other file changed: the old and new final trees differ only by that one
-file.
+At the same time, 23 commits authored with the cluster address were
+re-attributed to the author's own email. Code and every other document are
+otherwise unchanged.
 
 Rewriting changes commit IDs, and every provenance record in
 `results/provenance/` stores the commit it ran on. **`COMMIT_MAP.tsv` maps
-each old commit ID to its new one**, so a record written before the rewrite can
-still be traced to its code. The original history is preserved as a git bundle
-outside the repository
+each original commit ID to its published one**, so a record written before
+publication can still be traced to its code. The original history is preserved
+as a git bundle outside the repository
 (`neural_heterogeneity_dhcp_backups/pre_public_rewrite_2026-10-22.bundle`).
 
 Participant-level files (`results/`, `data/`) have never been committed.

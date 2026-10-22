@@ -59,8 +59,9 @@ because breaking it cost him real time.
 9. **On resuming a session, check `squeue -u nz01` / `sacct` first** and report
    anything that finished or failed.
 
-Not adopted (specific to Maros's project): `POT_BACKEND_DISABLE_TENSORFLOW`, the
-[project] claims gate, and the work-stealing launchers with lopri fan-out. The
+Not adopted (specific to Maros's project): a library-specific environment
+variable, a project-specific claims gate, and the work-stealing launchers with
+lopri fan-out. The
 fan-out only works when every copy of a launcher pulls from a shared pool. Our
 arrays split work by index, so two copies would duplicate it. If a sweep ever
 outgrows the 128-CPU cap, the next step is to submit a second, disjoint array

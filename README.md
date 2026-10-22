@@ -28,7 +28,7 @@ and communicability per AAL90 region.
 | `data/` | symlinks to the read-only sources (see below) — nothing original here |
 | `results/` | fitted models, model-comparison tables, derived features |
 | `figures/` | figures |
-| `notes/` | transcriptions of the proposal and methods supplement (ab15's first year report is kept locally only) |
+| `notes/` | planning-document transcriptions, kept locally only (see `notes/README.md`) |
 | `DECISIONS.md` | running record of analysis choices and why — read this first |
 | `SUPPLEMENT.md` | the evidence behind each choice, write-up ready |
 | `CLUSTER.md` | SLURM conventions and how we stay neighbourly |
@@ -145,3 +145,9 @@ numpyro.factor("lik", logsumexp(lp, axis=0).sum())
 This is faster than enumeration, and per-infant responsibilities come back from
 the same `lp` as `exp(lp - logsumexp(lp, axis=0))`. `scripts/verify_env.py`
 checks this end to end against a known two-cluster synthetic.
+
+## Licence
+
+Code and documentation are released under the MIT licence (`LICENSE`). The
+dHCP data, connectomes and all participant-level derivatives are **not** part of
+this repository and remain subject to their own data-use agreements.

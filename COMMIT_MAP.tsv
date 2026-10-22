@@ -1,0 +1,35 @@
+original_commit	published_commit	subject
+45c5d7c81f2ffb88ad5c800c90a7fe9d9d7b470d	45c5d7c81f2ffb88ad5c800c90a7fe9d9d7b470d	Set up workspace for dHCP neural heterogeneity project
+7250e977d87ac925fb8096a12fb7a6fc7b033efb	7250e977d87ac925fb8096a12fb7a6fc7b033efb	Add NumPyro/JAX environment
+eda6b8ff72142095d75eafbdefa6472cb56d7543	eda6b8ff72142095d75eafbdefa6472cb56d7543	Fix conda SSL config at source; drop setup workaround
+b8e32bd4f6dcbd67431bf73050886db62a18ae47	b8e32bd4f6dcbd67431bf73050886db62a18ae47	Copy all data locally; repoint paths after ab15's renames
+e3b7bab9ca50074f1dbae535d2aa108181ee20f0	7dc7b4577b138dda4db2fb982d58e6af9f1cf492	Record analysis decisions, plan, and source documents
+2b196de244e03b8aa86d707c2b6d60af9a677df1	53e2164844cf42f6864d6588706cfbc18b17d02d	Resolve motion and ancestry questions; unblock stages 1-2
+d9d5b550fb903b0023362e73da49ce2217b73606	d988224598f113e6827d741b5aff8861480d57c3	Stages 1-2: cohort, frozen splits, and regional features
+2f6aa34826f61032c55c58d9c3f2986adbe308ea	ee4faaf80c677a4d03c3d47f6e21b8e82372ca3f	Add methodological supplement, cluster conventions, and M=20
+809704068f3424fe2511cee0d1e8a0160cff30ee	c86d9fab74e1fe7a3980bc2453acc2e8f2daa5d9	Stage 4: mixture of factor analysers with P-spline centres
+59d731fc061e87fd80d85d75f0d74d7535ddcb0a	feb8bea7b099bca2247798b70db2d9e60d44c820	Run the K x q sweep
+41ceafb91bcb2490e1d5ca106ba76abd04721ebb	22b41742b329130ea2ecf2debb18a9f2122dd173	Figures styled after the proposal figure
+b6ff4a62aa54735aee9f5305098c31635394239a	674ada0e03d4696de9844fdd01e3ace6b5cd63f7	Fix q > cluster-size init crash; adopt cluster submission rules
+e94ab03911158f21dcb852d39557c50580c349fb	3f623f77e08ff732cc59fb9840a398b62d5645fe	CLUSTER.md: adopt Maros Rovny's submission rules; D12 rerun of non-converged specs
+47d64d6e0bd8f989a141781029e7edccfa3757e6	e82ac1ab10a07df68634630674c633bae37111a2	Model-selection figure: gain per infant over a null baseline
+5da6b6fe66e1a55c52436fa0c4607b32180c0da6	20e9c70e24a0eb8011a97bb34e8ee96064e58022	fit_final: fit one spec on all training infants and save the axes
+ee55a5e23fa8125f6d35fae8fbc67e33b024b699	bf0d834ded1c4cd13c7c4737986c7b33c33a4c77	Axes figures: size, content, correlates and stability of the K=1 axes
+3334b5e6511a37b78c786ac2cdc891691af930b3	185a417329f8b1ac4fe0e9aea7e279b9630ddfbf	SUPPLEMENT S14: the K=1 axes; panel letters in reading order
+65990e7b34d7f74adfaab5634c7105e08ac3616a	e97622cb10e6413d9fc71b69a8c0f27fe0826eac	S15 final K x q sweep; open item: extend q for K=1
+57bfc2fb660e154ca16ad1e9378373c376076f96	c1850a036fb051dffe994585aa48c72866ab868f	S15: list the collapsed and unconverged specs exactly
+7c0ebb47a48a59b16cccf70dfafc0cae95f49649	9b3062cc43d613e54d1580afff5b7d9f18c2234f	Brain-rendered axis figures and region profiles
+e63805e7900a021b6999d90374afe64edc840194	e29c182c15fbae151a38b2681d3153e2733e5d7f	Convert all figures to the project style guide (D13)
+55508d31f65e7e28169c81b9b4db91308bda825b	1eb51b72051ab5119fe98afa30643b6d8abcfd41	Model selection with paired SEs, axis significance, bootstrap and validation
+49c4c66f577bcedc082e108603addac44cb09aab	ce3c96cdccd2626cae98490ccacef0d747dfe804	Brain figures: smoothed surface-mesh renders with smooth region borders
+afeb9ec15cff2628395b667ffcb64ff2811e5ab9	83551b07c662bd6f1bf5651caf49b6298c5895ec	Brain renders: smoother mesh, smooth region and wall borders, clean slice outline
+d3d036e988435a13f038ab19e82bf2f543603723	95f8edf65657d442d25a4f9ee03884240f636d87	Split-half: save matched loadings; summary adds subspace overlap by block
+dbf926d931a0d39abaf0b8998517c600362ede5c	57c2ca1c759ae545b02ff261baa556d3f154f4e5	SUPPLEMENT S16-S22 and tests-at-a-glance; D14 model selection outcome
+f1a4288b49781594ae5698d9a794dce942be5898	8fd0b6872b7db216816464372a7ae4ab0c20238e	Tail anatomy, split-half at q=70, and nodal-measure evaluation
+d56678ceda39904765aee0f33ab0ca4f5dd12274	f32836dafea435740c324dd059ec01b8819cc8de	bootstrap: --q, --n-random, --out, resumable --per-replicate
+c7aa9dedc8f63e98edddc7e37a53e0fe6ad79d0f	3409aa97c6f15ae5fd530c5baa081b593f6bc068	Gate warm-start-only bootstrap refits; permutation p-values (rank-wise and FWE)
+78d745aae5548b66dd31508ce4f5a81dd7dd8b8d	7b6bf139fbbffa14144e1b21339ab472272d2845	evaluate_measures: copy each network before editing its diagonal
+0d2c0ec7dbd6ab9c99d4fc1a9b57e5e428b3f343	3822c182a4a162da3bc69a26803d99a686f2e420	characterise_tail: two-line block labels
+b001da960c38c70bdb08f42d478d2f1ebe764537	4a89aa30202a82795cf439e9151acc04983573b7	evaluate_measures: --figure-only; neutral legend markers; rotated labels
+799b74cae5ef9fe7effa067b59e328b44f31c984	8187a92a54cdab6a659f7e295ef468090f576c7a	SUPPLEMENT S23 tail anatomy and q=70 split-half; S24 nodal measure evaluation
+bcf5101971ca5d2ca0d509563e3ae12129ff457e	be25ccf7e4c64f6251b79831f50a1e86afe5ed04	SUPPLEMENT: escape pipes inside table cells

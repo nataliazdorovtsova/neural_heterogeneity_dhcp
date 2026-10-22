@@ -17,5 +17,7 @@ data/
 # slurm logs
 logs/
 
-# a colleague's unpublished report: kept locally for reference, never published
+# planning documents and a colleague's unpublished report: local only, never published
 notes/bhaskar_FYR.md
+notes/proposal.md
+notes/methods_supplement.md
