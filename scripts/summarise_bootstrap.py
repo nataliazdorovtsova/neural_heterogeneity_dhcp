@@ -29,7 +29,10 @@ SIG = paths.RESULTS / "significance"
 
 
 def main():
-    chunks = [np.load(f) for f in sorted((SIG / "bootstrap").glob("chunk*.npz"))]
+    import sys
+    sub = sys.argv[1] if len(sys.argv) > 1 else "bootstrap"
+    files = sorted((SIG / sub).glob("chunk*.npz")) + sorted((SIG / sub).glob("rep*.npz"))
+    chunks = [np.load(f) for f in files]
     q = int(chunks[0]["q"])
     Lb = np.concatenate([c["loadings"] for c in chunks])          # (n_boot, 270, q)
     S2b = np.concatenate([c["S2"] for c in chunks])
