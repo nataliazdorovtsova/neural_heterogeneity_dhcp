@@ -162,7 +162,7 @@ def figure(s):
         ax.plot(x, y, color=CAT_COLOURS[k], marker="osD"[k], markersize=7, lw=2.0)
     ax.set_yscale("log")
     fs.reference_line(ax, 1.0)
-    ax.set_xticks(x, [f"axes {b}" for b in BLOCKS])
+    ax.set_xticks(x, [f"axes\n{b}" for b in BLOCKS])
     ax.set_ylabel("enrichment over chance")
     fs.panel_title(ax, "B", "How local is each block?")
 
@@ -186,7 +186,7 @@ def figure(s):
                         color=fs.Q_COLOURS[25], value_fmt="{:.2f}")
         ax.scatter(xb, [sh["blocks"][b]["chance"] for b in BLOCKS], marker="_", s=600,
                    color=fs.COLORS["vermillion"], linewidths=2.5, zorder=4)
-        ax.set_xticks(xb, [f"axes {b}" for b in BLOCKS])
+        ax.set_xticks(xb, [f"axes\n{b}" for b in BLOCKS])
     ax.set_ylabel("subspace overlap")
     fs.panel_title(ax, "D", "Replication, by block")
 
