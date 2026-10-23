@@ -36,6 +36,7 @@ from scripts.fit_final import principal
 from scripts.split_half import match
 
 N = 8
+VARIANT_COLOUR = fs.COLORS["sky_blue"]     # light partner of the primary blue; orange is strength
 MEASURE_LABEL = {"strength": "strength", "log_clustering": "clustering",
                  "communicability": "communicability"}
 
@@ -103,7 +104,7 @@ def figure(out, variant):
     main_q = qs[-1]
     r = out[main_q]
     fig, axes = plt.subplots(2, 2, figsize=fs.FIGURE_SIZES["full_page"])
-    fig.subplots_adjust(hspace=0.55, wspace=0.32, bottom=0.14, top=0.95)
+    fig.subplots_adjust(hspace=0.62, wspace=0.32, bottom=0.17, top=0.95)
     x = np.arange(1, N + 1)
 
     ax = axes[0, 0]
@@ -120,7 +121,7 @@ def figure(out, variant):
     ax = axes[0, 1]
     ax.set_xlim(0.3, N + 0.7); ax.set_ylim(0, max(max(r["share_primary"]), max(r["share_variant"])) * 1.3)
     fs.rounded_bars(ax, x - 0.2, r["share_primary"], width=0.38, color=fs.COLORS["blue"])
-    fs.rounded_bars(ax, x + 0.2, r["share_variant"], width=0.38, color=fs.COLORS["orange"])
+    fs.rounded_bars(ax, x + 0.2, r["share_variant"], width=0.38, color=VARIANT_COLOUR)
     ax.set_xticks(x)
     ax.set_xlabel("axis (primary order)"); ax.set_ylabel("% of variation beyond age")
     fs.panel_title(ax, "B", "Axis sizes")
@@ -137,7 +138,10 @@ def figure(out, variant):
                 ax.add_patch(plt.Rectangle((xs[j] + off - 0.18, b), 0.36, comp[m, j], facecolor=cols[m],
                                            edgecolor=fs.TEXT_PRIMARY, linewidth=0.6, zorder=3))
                 b += comp[m, j]
-    ax.set_xticks(xs, [f"axis {j + 1}\nprimary | unthr." for j in range(3)])
+    ax.set_xticks(np.concatenate([xs - 0.2, xs + 0.2]), ["P"] * 3 + ["U"] * 3)
+    for j in range(3):
+        ax.text(xs[j], -0.13, f"axis {j + 1}", transform=ax.get_xaxis_transform(), ha="center",
+                va="top", fontsize=fs.NOTE_SIZE)
     ax.set_ylabel("share of squared loadings")
     fs.panel_title(ax, "C", "What each axis is made of")
 
@@ -148,19 +152,21 @@ def figure(out, variant):
     lim = max(0.35, np.max(np.abs(cr["primary"][:3] + cr["variant"][:3])) * 1.3)
     ax.set_ylim(-lim, lim)
     fs.rounded_bars(ax, xs - 0.2, cr["primary"][:3], width=0.38, color=fs.COLORS["blue"])
-    fs.rounded_bars(ax, xs + 0.2, cr["variant"][:3], width=0.38, color=fs.COLORS["orange"])
+    fs.rounded_bars(ax, xs + 0.2, cr["variant"][:3], width=0.38, color=VARIANT_COLOUR)
     fs.reference_line(ax, 0)
     ax.set_xticks(xs, [f"axis {j + 1}" for j in range(3)])
     ax.set_ylabel("correlation with network density")
     fs.panel_title(ax, "D", "Density link")
 
     handles = [Patch(color=fs.COLORS["blue"], label="primary (per-bin 25% + MST)"),
-               Patch(color=fs.COLORS["orange"], label=f"{variant}")] + \
+               Patch(color=VARIANT_COLOUR, label=f"{variant}")] + \
               [Patch(color=c, label=MEASURE_LABEL[m]) for c, m in zip(cols, MEASURES)]
     fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.06, 0.035), ncol=3)
-    fig.text(0.06, 0.02, f"One-group model refitted to {variant} networks (same infants, standardisation, "
-             f"20 starts, 1000 sweeps). B–D: q = {r['q']}; axes paired by Hungarian matching on |cos|.\n"
-             "Network density is that of the thresholded primary network, a per-infant covariate.",
+    fig.text(0.06, 0.02, f"One-group model refitted to {variant} networks (same infants, "
+             "standardisation, 20 starts, 1000 sweeps).\n"
+             f"B–D: q = {r['q']}; axes paired by Hungarian matching on |cos|. C: P = primary, "
+             "U = unthresholded.\nNetwork density is that of the thresholded primary network, "
+             "a per-infant covariate.",
              fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY, va="top")
     fs.save_figure(fig, paths.FIGURES / "fig11_preprocessing_check")
 
