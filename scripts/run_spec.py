@@ -47,9 +47,9 @@ def spec_name(s):
     return f"K{s['K']}_q{s['q']}_M{s['M']}_{s['clock']}_{s['covariance_sharing']}"
 
 
-def load():
+def load(variant=VARIANT):
     coh = pd.read_csv(paths.RESULTS / "cohort" / "cohort.csv")
-    feat = np.load(paths.RESULTS / "features" / f"{VARIANT}.npz")
+    feat = np.load(paths.RESULTS / "features" / f"{variant}.npz")
     X = feat["X"].reshape(len(feat["X"]), -1)           # (n, 270)
     prim = coh.in_primary.values & (coh.split == "train").values
     return coh[prim].reset_index(drop=True), X[prim]

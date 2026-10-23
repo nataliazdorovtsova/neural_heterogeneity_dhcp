@@ -81,6 +81,8 @@ def main():
     ap.add_argument("--M", type=int, default=splines.M_DEFAULT)
     ap.add_argument("--n-init", type=int, default=20)
     ap.add_argument("--n-iter", type=int, default=1000)
+    ap.add_argument("--variant", default=VARIANT,
+                    help="feature set in results/features/ (default: the primary network)")
     a = ap.parse_args()
     if a.from_selection:
         pick = json.loads((paths.RESULTS / "selection.json").read_text())[a.from_selection]
@@ -89,11 +91,12 @@ def main():
         a.K, a.q = pick["K"], pick["q"]
     if a.K is None or a.q is None:
         ap.error("give --K and --q, or --from-selection")
-    name = f"K{a.K}_q{a.q}"
+    # Fits of other feature sets get a suffix, so the primary files are untouched.
+    name = f"K{a.K}_q{a.q}" + ("" if a.variant == VARIANT else f"_{a.variant}")
     if a.skip_existing and (OUT / f"{name}.npz").exists():
         print(f"{name} already fitted -> {OUT / name}.npz"); return
 
-    coh, Xraw = load()
+    coh, Xraw = load(a.variant)
     X, mu, sd = standardise(Xraw)
     t = age_for(coh, CLOCK)
     B = splines.basis(t, M=a.M)
@@ -116,14 +119,14 @@ def main():
 
     prov.snapshot(
         name=f"final_{name}",
-        config=dict(K=a.K, q=a.q, M=a.M, clock=CLOCK, variant=VARIANT,
+        config=dict(K=a.K, q=a.q, M=a.M, clock=CLOCK, variant=a.variant,
                     covariance_sharing="group_specific", trajectory="group_smooth",
                     n_init=a.n_init, n_iter=a.n_iter, seed_rule=f"{SEED_BASE} + restart",
                     fitted_on="all training infants (validation untouched)"),
         results=dict(n=len(X), penalised_loglik=float(tr[-1]), converged=converged,
                      restart_spread=spread, seconds=secs),
         thresholds=dict(convergence=prov.threshold(1e-6, "relative change in penalised log lik at final sweep")),
-        inputs=[paths.RESULTS / "features" / f"{VARIANT}.npz",
+        inputs=[paths.RESULTS / "features" / f"{a.variant}.npz",
                 paths.RESULTS / "cohort" / "cohort.csv"])
 
 
