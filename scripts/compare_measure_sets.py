@@ -82,7 +82,7 @@ def split_half(variant_dir, idx=(0, 1, 2)):
     if not files:
         return None
     c = np.array([np.load(f)["cos_ab"] for f in files])
-    idx = [i for i in idx if i < c.shape[1]]
+    idx = [int(i) for i in idx if i < c.shape[1]]
     return dict(n=len(files), axes=[i + 1 for i in idx], median=np.median(c[:, idx], 0).round(3).tolist(),
                 min=c[:, idx].min(0).round(3).tolist())
 
