@@ -41,6 +41,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S24 | Nodal measures: robustness, redundancy, shape | whether to keep communicability; clustering's fragility |
 | S25 | Bootstrap and permutation null extended to 1,000 each | final intervals and p-values; supersedes the counts in S18 and S20 |
 | S26 | Axes refitted on unthresholded networks | axes 1–3 are not a thresholding artefact |
+| S27 | Measure sets: communicability dropped or replaced by eigenvector centrality | conclusions do not depend on communicability; eigenvector centrality changes the group question |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -64,6 +65,8 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Permutation null, 1,000 shuffles | corrected significance of each axis | all 15 axes p < 0.001, family-wise corrected | S25 |
 | Parametric bootstrap, 1,000 replicates | final loading and axis-size intervals | stable vs 200; 0.7–4% of calls changed | S25 |
 | Warm-start-only refits (gate) | can bootstrap refits drop the random starts? | no: loadings differ by up to 0.03; not used | S25 |
+| Measure set: strength + clustering only | do conclusions need communicability? | no: same axes (0.99 / 0.99 / 0.94); K = 1 (z = 9.5, 18.5) | S27 |
+| Measure set: eigenvector centrality instead of communicability | do conclusions survive a different third measure? | axes 1–3 present (0.94 / 0.98 / 0.83), but a new 18% eigenvector axis; K = 2 at q = 15 (z = −4.0), tie at q = 25 | S27 |
 | Refit on unthresholded networks | are axes 1–3 a thresholding artefact? | no: same axes (\|cos\| 0.89 / 0.91 / 0.71), same infants (r = 0.88 / 0.97 / 0.82) | S26 |
 | Anatomy of the axis tail | what do axes beyond 3 encode? | increasingly local: within-region coupling 33× chance in axes 21–70 | S23 |
 | Split-half replication at q = 70 | does the three-axis conclusion hold in the selected model? | axes 1–3: 0.91 / 0.80 / 0.73; tail replicates as blocks only | S23 |
@@ -1198,4 +1201,80 @@ Interpretation:
 - **Axis 3's motion link weakens** (−0.22 → −0.14), and its density link
   disappears (−0.13 → 0.01).
 - As in S19 and S23, axes 4 and beyond do not reproduce individually.
+
+---
+
+## S27 Measure sets: communicability dropped, or replaced by eigenvector centrality
+
+*2026-10-23. Jobs 4303541–5, with the comparison re-run after a figure fix. Scripts:
+`extract_alt_features.py`, `run_spec.py --variant`, `fit_final.py --variant`,
+`split_half.py --variant` and `compare_measure_sets.py`. Figure:
+`fig12_measure_sets`. Cost: 82 core-hours, 4.6 h wall.*
+
+**Why.** Communicability largely restates regional strength (|r| = 0.77, S24).
+Eigenvector centrality was the most promising replacement: robust to
+thresholding (0.89), far less redundant with strength (0.37), no zeros.
+
+**Sets**, each fitted to the same 569 training infants:
+- **primary:** strength + clustering + communicability;
+- **eig:** strength + clustering + eigenvector centrality. It is kept
+  untransformed: by the D10 rule the log raised the median |skew| from 0.76
+  to 1.06;
+- **sc:** strength + clustering only (D = 180).
+
+Strength and clustering are byte-identical across sets. Held-out scores are not
+comparable across sets, since the predicted data differ, so each check
+compares conclusions within a set.
+
+**One group or two?** The paired per-infant K = 1 minus K = 2 difference (as
+in S16), 20 starts per fold, 1000 sweeps:
+
+| set | q = 15 | q = 25 |
+|---|---|---|
+| primary (S16) | +2,053 ± 272, z = **7.6** | +5,153 ± 355, z = **14.5** |
+| sc | +1,528 ± 160, z = **9.5** | +3,523 ± 190, z = **18.5** |
+| eig | −2,599 ± 644, z = **−4.0** (favours K = 2) | +330 ± 637, z = 0.5 (tie) |
+
+**Same axes?** One-group model, q = 15. Each set's axes were matched to
+primary axes 1–8 on the strength and clustering coordinates every set shares:
+
+| | primary axis 1 (clustering) | axis 2 (strength) | axis 3 |
+|---|---|---|---|
+| sc: matching axis (\|cos\|) | axis 1 (0.995) | axis 2 (0.995) | axis 3 (0.935) |
+| eig: matching axis (\|cos\|) | axis 2 (0.941) | axis 4 (0.984) | axis 6 (0.832) |
+| split-half of the matched axis: sc / eig | 0.96 / 0.93 | 0.91 / 0.84 | 0.66 / 0.69 |
+
+**What eigenvector centrality adds** (eig model, own axes):
+
+| eig axis | share of variation beyond age | strength / clustering / eigenvector | split-half |
+|---|---|---|---|
+| 1 | **18.1%** | 0.02 / 0.06 / **0.92** | 0.98 |
+| 2 (= primary axis 1) | 8.0% | 0.04 / 0.34 / 0.62 | 0.93 |
+| 3 | 6.0% | 0.12 / 0.29 / 0.59 | 0.88 |
+| 4 (= primary axis 2) | 4.3% | 0.83 / 0.07 / 0.09 | 0.84 |
+
+Eigenvector centrality is skewed in many regions and looks bimodal in some:
+the median per-region bimodality coefficient is 0.46, and 18% of regions
+exceed 0.555, the usual bimodality flag.
+
+Interpretation:
+- **Communicability is not driving any conclusion.** Without it, the same
+  axes 1–3 appear (|cos| 0.99, 0.99, 0.94), axes 1–2 reproduce at least as
+  well, and one group beats two more decisively (z = 9.5 and 18.5). This is
+  consistent with S24: communicability adds little beyond strength.
+- **Eigenvector centrality carries a large brain-wide dimension of its own**
+  (18% of variation, highly reproducible), which strength and clustering do
+  not. The strength and clustering axes survive inside the eig model, mixed
+  with eigenvector centrality.
+- **With eigenvector centrality, the evidence for one group weakens.** Two
+  groups win at q = 15 and the two tie at q = 25. Two explanations remain
+  open:
+  1. the extra dimensions need more axes before continuous variation absorbs
+     them, the same substitution seen in the primary set at q ≤ 5 (S16);
+  2. eigenvector centrality can jump between hubs when two regions compete for
+     the network's leading eigenvector. That produces near-discrete,
+     partly bimodal values, which a mixture model can capture as "groups".
+
+  This is unresolved and should not be reported as evidence for subtypes
+  without the follow-ups in DECISIONS.md.
 

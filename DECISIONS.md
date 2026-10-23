@@ -388,6 +388,16 @@ dropped) go ahead as agreed.
 ---
 
 ## Open — needs a decision or an answer
+- **Eigenvector centrality and the group question** (S27). With eigenvector
+  centrality in place of communicability, K = 2 beats K = 1 at q = 15
+  (z = −4.0) and the two tie at q = 25. To tell "needs more axes" from
+  "eigenvector hub-switching creates group-like values":
+  - (a) extend K = 1 vs K = 2 for this set to q = 35, 50, 70 (~150 core-hours);
+  - (b) fit K = 2 at q = 15 and inspect what separates the two groups, and
+    whether group membership tracks the bimodal regions (~5 core-hours).
+
+  Communicability itself is not needed for any conclusion: dropping it changes
+  nothing (S27).
 - **How far to take q** (D14). Options: (a) report q = 70 as "at least 70
   dimensions improve prediction" and stop; (b) extend to q = 100/150 to
   bracket the optimum, at roughly 400+ core-hours plus refits; or
