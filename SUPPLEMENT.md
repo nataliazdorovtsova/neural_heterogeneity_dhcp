@@ -39,6 +39,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S22 | Compute ledger | core-hours for every run |
 | S23 | What the axis tail encodes; split-half at q = 70 | why interpretation stops at three axes |
 | S24 | Nodal measures: robustness, redundancy, shape | whether to keep communicability; clustering's fragility |
+| S25 | Bootstrap and permutation null extended to 1,000 each | final intervals and p-values; supersedes the counts in S18 and S20 |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -59,6 +60,9 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Split-half replication, 10 splits | do axes reproduce in independent infants? | axes 1–3 yes (0.91, 0.81, 0.74); 4–8 weakly | S19 |
 | Parametric bootstrap, 200 replicates | how precise are loadings and axis sizes? | 64–78% of loadings exclude zero (axes 1–8) | S20 |
 | Display vs connectome atlas centroids | are regions drawn in the right place? | r = 0.999 / 0.996 / 0.994 | S21 |
+| Permutation null, 1,000 shuffles | corrected significance of each axis | all 15 axes p < 0.001, family-wise corrected | S25 |
+| Parametric bootstrap, 1,000 replicates | final loading and axis-size intervals | stable vs 200; 0.7–4% of calls changed | S25 |
+| Warm-start-only refits (gate) | can bootstrap refits drop the random starts? | no: loadings differ by up to 0.03; not used | S25 |
 | Anatomy of the axis tail | what do axes beyond 3 encode? | increasingly local: within-region coupling 33× chance in axes 21–70 | S23 |
 | Split-half replication at q = 70 | does the three-axis conclusion hold in the selected model? | axes 1–3: 0.91 / 0.80 / 0.73; tail replicates as blocks only | S23 |
 | Measure robustness to thresholding | which measures depend on preprocessing? | clustering 0.22; communicability 0.84; strength 0.92 | S24 |
@@ -748,6 +752,9 @@ reached the same optimum (spread 0.0).
 
 ## S18 Permutation null (parallel analysis)
 
+> **Extended to 1,000 permutations in S25.** The conclusion is unchanged, and
+> S25 adds corrected p-values.
+
 *Produced by: `scripts/permutation_null.py` (job 4199430) and
 `scripts/summarise_axes_significance.py` (job 4199432). Model: K = 1, q = 15.*
 
@@ -830,6 +837,9 @@ Figure: `fig8_axis_significance`, panel B.
 ---
 
 ## S20 Parametric bootstrap of the selected model
+
+> **Extended to 1,000 replicates in S25**, which gives the final intervals.
+> The figures now use those.
 
 *Produced by: `scripts/bootstrap.py` (job 4199434, 20 tasks × 10) and
 `scripts/summarise_bootstrap.py` (job 4199759). Model: K = 1, q = 70 (the
@@ -926,6 +936,11 @@ Core-hours from SLURM accounting (CPUTimeRAW: wall time × allocated CPUs).
 | split-half, 2 × 10 splits (S19) | 4199429, 4199764 | 7.5 |
 | parametric bootstrap, 200 fits at q = 70 (S20) | 4199434 | **843.9** |
 | figures, summaries, validation, gate | various | < 2 |
+| warm-start gate and bootstrap timing tests (S25) | 4282435, 4282307, 4282319 | ≈ 8 |
+| permutations 101–1,000 (S25) | 4282437 | 151 |
+| bootstrap replicates 201–1,000 at 4 CPUs (S25) | 4283506 | 1,567 |
+| bootstrap at 8 CPUs, cancelled after 45 min for the 4-CPU rerun | 4282929 | ≈ 73 |
+| tail anatomy, q = 70 split-half, measure evaluation (S23–S24) | 4281650–2, 4282577 | ≈ 85 |
 
 The bootstrap was costed in advance for q = 15. The selection then chose
 q = 70, which made each refit take about 28 minutes and the run about 4× the
@@ -1048,4 +1063,86 @@ Findings:
 5. **Eigenvector centrality** is robust (0.89), far less redundant with
    strength than communicability (0.37), has no zeros and only moderate skew.
    On these criteria it is the strongest replacement candidate.
+
+---
+
+## S25 Bootstrap and permutation null extended to 1,000 each
+
+*2026-10-22/23. Jobs 4282437 (permutations), 4283506 (bootstrap) and 4283507
+(summary). Supersedes the replicate counts in S18 and S20; their methods are
+unchanged.*
+
+**Why.** With 200 bootstrap replicates, a 95% interval rests on the 5 most
+extreme replicates at each end. For 31–50 of the 270 loadings per axis (axes
+1–8), whether the interval excluded zero was within Monte Carlo error of the
+cut-off: another seed could flip the call, and with it the colour on the brain
+maps. With 100 permutations, the smallest p-value expressible is about 0.01,
+too coarse for a correction across 15 axes.
+
+### Permutations: 1,000 (900 new, same settings as S18)
+
+All 1,000 null fits converged. The largest axis in any of the 1,000 permuted
+datasets carried 0.79% of variation; the smallest observed axis carries 0.94%.
+
+| | every axis, 1–15 |
+|---|---|
+| p, against the null axis of the same rank | **< 0.001** (0 of 1,000 null axes as large; reported as 1/1,001) |
+| p, family-wise corrected (max-statistic over all 15 axes) | **< 0.001** |
+
+Every axis is larger than anything 1,000 shuffled datasets produced, after
+correcting for testing 15 axes.
+
+### Bootstrap: 1,000 replicates (800 new, same settings as S20)
+
+All 1,000 refits converged. Every replicate used the same procedure as the
+original 200 (warm start plus two random starts, 1000 sweeps), so all are
+pooled.
+
+**Axis sizes** (% of variation beyond age, 95% percentile interval):
+
+| axis | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| estimate | 6.82 | 4.83 | 4.10 | 2.88 | 2.45 | 2.19 | 2.02 | 1.87 |
+| 1,000 replicates | 6.26–7.86 | 4.51–5.54 | 3.77–4.67 | 2.79–3.43 | 2.46–2.91 | 2.23–2.59 | 2.05–2.37 | 1.91–2.17 |
+| 200 replicates (S20) | 6.21–7.83 | 4.57–5.53 | 3.76–4.66 | 2.82–3.38 | 2.45–2.89 | 2.24–2.55 | 2.05–2.39 | 1.89–2.16 |
+
+The upward bias noted in S20 for axes ≥ 5 (estimate at or below the lower
+limit) persists, as expected: it is a property of bootstrapped eigenvalues,
+not of the number of replicates.
+
+**Loadings significantly non-zero** (95% interval excludes zero), out of 270:
+
+| axis | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| 1,000 replicates | 195 | 182 | 204 | 205 | 180 | 174 | 178 | 175 |
+| calls that changed from 200 replicates | 2 | 3 | 2 | 9 | 6 | 5 | 11 | 4 |
+| calls still within Monte Carlo error | 12 | 14 | 12 | 17 | 11 | 14 | 21 | 16 |
+
+Going from 200 to 1,000 replicates changed 2–3 significance calls on each of
+the interpreted axes (1–3), out of 270 loadings. The number of calls within
+Monte Carlo error of the cut-off fell from 31–50 to 11–21 per axis. The
+conclusions of S20 stand. The intervals are now precise enough that further
+replicates would mainly settle loadings sitting right at the cut-off.
+
+### A faster refit was tested and rejected
+
+Before the run, refitting from the warm start alone (no random starts) was
+timed at ~5× faster. A gate job refitted 5 of the original replicates that way
+on identical simulated data (`scripts/check_warm_start.py`, job 4282435). The
+loadings differed by up to 0.033 and axis variances by up to 4%: at q = 70 a
+random start sometimes reaches a better optimum than the warm start. The
+shortcut was not used, and all 1,000 replicates share one procedure.
+
+### Cost and duration
+
+| run | core-hours | wall time | setup |
+|---|---|---|---|
+| 900 permutations | 151 | ~5 h | 4 CPUs × 8 tasks |
+| 800 bootstrap replicates | 1,567 | ~17 h (12:28 → 05:26) | 4 CPUs × 24, then 32 tasks |
+
+Bootstrap replicates averaged 1,789 s each at 4 CPUs (range 991–2,368 s),
+against 1,265 s in a solo timing run. With eight tasks per node they compete
+for memory bandwidth. Planning figure for future runs: about 2.0 core-hours
+per replicate at q = 70, so ~10,000 core-hours (about 3.5 days on the 128-CPU
+allowance) for 5,000.
 
