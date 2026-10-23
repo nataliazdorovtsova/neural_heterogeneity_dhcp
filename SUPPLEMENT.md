@@ -42,6 +42,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S25 | Bootstrap and permutation null extended to 1,000 each | final intervals and p-values; supersedes the counts in S18 and S20 |
 | S26 | Axes refitted on unthresholded networks | axes 1–3 are not a thresholding artefact |
 | S27 | Measure sets: communicability dropped or replaced by eigenvector centrality | conclusions do not depend on communicability; eigenvector centrality changes the group question |
+| S28 | What separates the eigenvector-set "groups" | a left/right localisation of eigenvector centrality, not infant subtypes |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -67,6 +68,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Warm-start-only refits (gate) | can bootstrap refits drop the random starts? | no: loadings differ by up to 0.03; not used | S25 |
 | Measure set: strength + clustering only | do conclusions need communicability? | no: same axes (0.99 / 0.99 / 0.94); K = 1 (z = 9.5, 18.5) | S27 |
 | Measure set: eigenvector centrality instead of communicability | do conclusions survive a different third measure? | axes 1–3 present (0.94 / 0.98 / 0.83), but a new 18% eigenvector axis; K = 2 at q = 15 (z = −4.0), tie at q = 25 | S27 |
+| Eigenvector-set K = 2 groups inspected | are the groups infant subtypes? | no: they split on which hemisphere holds the eigenvector centrality (r = 0.81; dominant hub V = 0.77); no age, prematurity, sex or density difference | S28 |
 | Refit on unthresholded networks | are axes 1–3 a thresholding artefact? | no: same axes (\|cos\| 0.89 / 0.91 / 0.71), same infants (r = 0.88 / 0.97 / 0.82) | S26 |
 | Anatomy of the axis tail | what do axes beyond 3 encode? | increasingly local: within-region coupling 33× chance in axes 21–70 | S23 |
 | Split-half replication at q = 70 | does the three-axis conclusion hold in the selected model? | axes 1–3: 0.91 / 0.80 / 0.73; tail replicates as blocks only | S23 |
@@ -1277,4 +1279,48 @@ Interpretation:
 
   This is unresolved and should not be reported as evidence for subtypes
   without the follow-ups in DECISIONS.md.
+
+---
+
+## S28 What separates the eigenvector-set "groups"
+
+*2026-10-23. Jobs 4309285 (K = 2, q = 15 fit, eigenvector set: 20 starts,
+converged, restart spread 272) and 4309286, re-run after a figure revision.
+Script: `inspect_eig_groups.py`. Figure: `fig13_eig_groups`.*
+
+**Question.** In the strength + clustering + eigenvector set, two groups beat
+one at q = 15 (S27). Is that structure among infants, or a property of the
+measure?
+
+| | result |
+|---|---|
+| group sizes | 321 / 248; every infant assigned with probability > 0.9 |
+| what differs between group centres (at 40 weeks PMA) | **94% eigenvector centrality**; strength 2%, clustering 4% |
+| largest differences | eigenvector centrality of left-hemisphere regions (putamen, precentral, insula, SMA, frontal: −1.4 to −1.6 SD in group 2), and right middle occipital (+1.4 SD) |
+| membership vs each infant's dominant hub (region with the highest centrality) | Cramér's V = **0.77**: left middle frontal → group 1 in 153 of 154 infants; right middle temporal → group 2 in 138 of 154 |
+| membership vs share of eigenvector centrality in the left hemisphere | group means **0.56 vs 0.23**; \|r\| = **0.81**; across infants the share ranges from 0.01 to 0.91 |
+| membership vs the one-group model's eigenvector axis | \|r\| = 0.85 |
+| PMA at scan, GA at birth, age since birth, network density | no difference (p = 0.50–0.99, Mann–Whitney) |
+| preterm, female | no difference (p = 0.79, 0.25, χ²) |
+| head motion | 1.76 vs 1.96 (p = 0.015 uncorrected; not significant after correcting for 7 tests) |
+
+**Interpretation.** The two "groups" are infants whose eigenvector centrality
+concentrates in the left hemisphere versus the right. Eigenvector centrality
+is the leading eigenvector of the connectivity matrix. When a network has two
+similarly strong, weakly coupled modules, here the two hemispheres, the
+leading eigenvector tends to localise on whichever is marginally stronger.
+Small differences in edge weights can then shift centrality wholesale from one
+hemisphere to the other. That is a property of the measure, not a
+distinct kind of infant: the groups show no differences in age, prematurity,
+sex or network density, and strength and clustering barely differ between
+them.
+
+**Consequence.**
+- The K = 2 preference in the eigenvector set is not evidence for neonatal
+  subtypes.
+- Eigenvector centrality is unsuitable as a regional measure for this
+  question in these networks, because its hemispheric localisation dominates
+  its variance (its 18% axis, S27).
+- The primary measure set stands. Communicability is retained as planned, and
+  S27 shows the conclusions do not depend on it.
 
