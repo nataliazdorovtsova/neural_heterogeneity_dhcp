@@ -94,6 +94,9 @@ def main():
     ev_diff = np.abs(diff[2::3])
     r_bc = float(stats.spearmanr(bc, ev_diff)[0])
 
+    # 4b. which hemisphere holds the eigenvector centrality (AAL: even index = left)
+    left = ev[:, 0::2].sum(1) / ev.sum(1)
+
     # 5. the one-group model's eigenvector axis
     L1, S2, Vt, sign = principal(d1["W"][0], d1["psi"][0])
     s1 = (d1["scores"][:, 0, :] @ Vt.T * sign)[:, 0]
@@ -126,15 +129,18 @@ def main():
         bimodality=dict(regions_bc_over_0_555=float((bc > 0.555).mean()),
                         spearman_bc_vs_group_difference=r_bc),
         eig_axis1=dict(bimodality_coefficient=bc_axis, abs_corr_with_group=r_axis),
+        left_hemisphere_share=dict(mean_by_group=[float(left[z == k].mean()) for k in range(2)],
+                                   abs_corr_with_group=float(abs(stats.pointbiserialr(z, left)[0])),
+                                   range=[float(left.min()), float(left.max())]),
         covariates=covs,
     )
     (paths.RESULTS / "significance" / "eig_groups.json").write_text(json.dumps(out, indent=2))
     print(json.dumps(out, indent=2))
     fs.apply_style()
-    figure(out, s1, z, bc, ev_diff, diff)
+    figure(out, s1, z, left)
 
 
-def figure(out, s1, z, bc, ev_diff, diff):
+def figure(out, s1, z, left):
     gcol = [fs.COLORS["blue"], fs.COLORS["vermillion"]]
     fig, axes = plt.subplots(2, 2, figsize=fs.FIGURE_SIZES["full_page"])
     fig.subplots_adjust(hspace=0.6, wspace=0.32, bottom=0.17, top=0.95)
@@ -144,7 +150,7 @@ def figure(out, s1, z, bc, ev_diff, diff):
     for k in range(2):
         ax.hist(s1[z == k], bins=bins, color=gcol[k], alpha=0.75, edgecolor=fs.TEXT_PRIMARY,
                 linewidth=0.4)
-    ax.set_xlabel("score on eigenvector axis (one-group model)"); ax.set_ylabel("infants")
+    ax.set_xlabel("eigenvector-axis score"); ax.set_ylabel("infants")
     fs.panel_title(ax, "A", "Groups along the big axis")
 
     ax = axes[0, 1]
@@ -172,20 +178,21 @@ def figure(out, s1, z, bc, ev_diff, diff):
     fs.panel_title(ax, "C", "What differs between groups")
 
     ax = axes[1, 1]
-    ax.scatter(bc, ev_diff, s=30, color=fs.COLORS["vermillion"], edgecolors="white", linewidths=0.5)
-    fs.reference_line(ax, 0, axis="x")
-    ax.axvline(0.555, color=fs.NEUTRAL_GREY, ls="--", lw=0.7, alpha=0.5)
-    ax.set_xlabel("bimodality coefficient (per region)")
-    ax.set_ylabel("|group difference| (SD)")
-    fs.panel_title(ax, "D", "Bimodal regions vs groups")
+    bins = np.linspace(0, 1, 26)
+    for k in range(2):
+        ax.hist(left[z == k], bins=bins, color=gcol[k], alpha=0.75, edgecolor=fs.TEXT_PRIMARY,
+                linewidth=0.4)
+    fs.reference_line(ax, 0.5, axis="x")
+    ax.set_xlabel("share of eigenvector centrality in left hemisphere"); ax.set_ylabel("infants")
+    fs.panel_title(ax, "D", "Which hemisphere leads?")
 
     fig.legend(handles=[Patch(color=gcol[k], label=f"group {k + 1} (n = {out['sizes'][k]})")
                         for k in range(2)], loc="lower left", bbox_to_anchor=(0.06, 0.035), ncol=2)
     hv = out["dominant_hub"]
     fig.text(0.06, 0.02, "Strength + clustering + eigenvector centrality, K = 2, q = 15, all 569 "
              "training infants.\nB: Cramér's V between dominant hub and group = "
-             f"{hv['cramers_v']:.2f}. D: dashed line = 0.555, the usual bimodality threshold; "
-             "group differences\nare at 40 weeks PMA, in SD units of each coordinate.",
+             f"{hv['cramers_v']:.2f}. C: group-centre differences at 40 weeks PMA.\n"
+             "D: dashed line = an even split between hemispheres.",
              fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY, va="top")
     fs.save_figure(fig, paths.FIGURES / "fig13_eig_groups")
 
