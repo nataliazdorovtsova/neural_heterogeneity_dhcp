@@ -67,7 +67,7 @@ def k1_vs_k2(variant):
         z = np.load(f)
         recs[(c["K"], c["q"])] = pd.Series(z["lpd"], index=z["dhcp_id"].astype(str))
     out = {}
-    for q in (15, 25):
+    for q in sorted({q for _, q in recs}):
         if (1, q) in recs and (2, q) in recs:
             d = (recs[(1, q)] - recs[(2, q)].reindex(recs[(1, q)].index)).values
             se = np.sqrt(len(d)) * d.std(ddof=1)
@@ -156,7 +156,7 @@ def figure(out):
     fs.panel_title(ax, "C", "Reproducible?")
 
     ax = axes_[1, 1]
-    qs = (15, 25)
+    qs = sorted({int(q) for k in keys for q in out[k]["K1_vs_K2"]})
     xs = np.arange(len(qs))
     vals, errs, cols, pos = [], [], [], []
     for i, k in enumerate(keys):

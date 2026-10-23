@@ -131,6 +131,8 @@ def main():
                     help=f"ECM sweeps per restart (default {N_ITER}); raise for specs that did not converge")
     ap.add_argument("--variant", default=VARIANT,
                     help="feature set in results/features/ (default: the primary network)")
+    ap.add_argument("--K", type=int, help="with --q: fit this specification instead of --index")
+    ap.add_argument("--q", type=int)
     a = ap.parse_args()
     if a.n_iter is not None:
         N_ITER = a.n_iter
@@ -138,8 +140,12 @@ def main():
         for i, s in enumerate(SPECS):
             print(f"{i:3d}  {spec_name(s)}")
         return
-    spec = dict(SPECS[a.index], variant=a.variant)
-    print(f"[{a.index}] {spec_name(spec)}")
+    if a.K is not None and a.q is not None:
+        spec = dict(K=a.K, q=a.q, M=M, clock=CLOCK, variant=a.variant,
+                    covariance_sharing="group_specific", trajectory="group_smooth")
+    else:
+        spec = dict(SPECS[a.index], variant=a.variant)
+    print(f"[{a.index if a.index is not None else 'K,q'}] {spec_name(spec)}")
     out = run(spec)
     if out is None:
         print("   FAILED: no initialisation produced a finite fit")
