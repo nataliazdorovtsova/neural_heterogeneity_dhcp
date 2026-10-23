@@ -76,13 +76,15 @@ def k1_vs_k2(variant):
     return out
 
 
-def split_half(variant_dir):
+def split_half(variant_dir, idx=(0, 1, 2)):
+    """Split-half |cos| for the set's own axes `idx` (0-based, within the 8 tracked)."""
     files = sorted((paths.RESULTS / "significance" / variant_dir).glob("split*.npz"))
     if not files:
         return None
     c = np.array([np.load(f)["cos_ab"] for f in files])
-    return dict(n=len(files), median=np.median(c, 0)[:3].round(3).tolist(),
-                min=c.min(0)[:3].round(3).tolist())
+    idx = [i for i in idx if i < c.shape[1]]
+    return dict(n=len(files), axes=[i + 1 for i in idx], median=np.median(c[:, idx], 0).round(3).tolist(),
+                min=c[:, idx].min(0).round(3).tolist())
 
 
 def main():
@@ -105,7 +107,10 @@ def main():
             variant=variant, measures=nm, matched_axis=(idx + 1).tolist(),
             cos_shared=cos.round(3).tolist(), share=s[idx].round(2).tolist(),
             composition_axes_1_3=comp.round(3).tolist(), K1_vs_K2=k1_vs_k2(variant),
-            split_half=split_half(f"split_half_q{Q}_{variant}"))
+            # reproducibility of this set's own top three axes, and of the axes
+            # that match primary axes 1-3 (which may sit lower in its order)
+            split_half_own=split_half(f"split_half_q{Q}_{variant}"),
+            split_half=split_half(f"split_half_q{Q}_{variant}", tuple(idx[:3])))
     (paths.RESULTS / "significance" / "measure_sets.json").write_text(json.dumps(out, indent=2))
     print(json.dumps(out, indent=2))
     fs.apply_style()
@@ -115,7 +120,7 @@ def main():
 def figure(out):
     keys = [k for k in ("primary", "eig", "sc") if k in out]
     fig, axes_ = plt.subplots(2, 2, figsize=fs.FIGURE_SIZES["full_page"])
-    fig.subplots_adjust(hspace=0.55, wspace=0.32, bottom=0.14, top=0.95)
+    fig.subplots_adjust(hspace=0.6, wspace=0.32, bottom=0.17, top=0.95)
     x = np.arange(1, N + 1)
 
     ax = axes_[0, 0]
@@ -147,6 +152,7 @@ def figure(out):
     fs.reference_line(ax, 0.7)
     ax.set_xticks(xs, [f"axis {j + 1}" for j in range(3)])
     ax.set_ylabel("split-half similarity (median)")
+    ax.set_xlabel("axis of the primary model (matched)")
     fs.panel_title(ax, "C", "Reproducible?")
 
     ax = axes_[1, 1]
@@ -174,10 +180,10 @@ def figure(out):
 
     fig.legend(handles=[Patch(color=COLOUR[k], label=LABEL[k]) for k in keys],
                loc="lower left", bbox_to_anchor=(0.06, 0.035), ncol=3)
-    fig.text(0.06, 0.02, f"One-group model, q = {Q}, same 569 infants. A: axes compared on the "
-             "strength and clustering coordinates every set shares. D: paired held-out difference\n"
-             "within each set (positive favours one group), 95% intervals; scores are not "
-             "comparable across sets.", fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY, va="top")
+    fig.text(0.06, 0.02, f"One-group model, q = {Q}, same 569 infants. A–C: each set's axes are "
+             "matched to the primary axes\non the strength and clustering coordinates every set "
+             "shares. D: paired held-out difference within each set\n(positive favours one group), "
+             "95% intervals; held-out scores are not comparable across sets.", fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY, va="top")
     fs.save_figure(fig, paths.FIGURES / "fig12_measure_sets")
 
 
