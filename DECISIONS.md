@@ -369,6 +369,24 @@ ask:
 
 ---
 
+## D16. Axes 1–3 survive removing the threshold; axis 1's density link is not a threshold artefact
+
+*2026-10-23. Evidence: SUPPLEMENT S26.* Refitting on unthresholded networks
+recovers axes 1–3:
+- as patterns: |cos| 0.89 / 0.91 / 0.71;
+- as infant orderings: r = 0.88 / 0.97 / 0.82.
+
+Axis 1 grows (6.8% → 20.6%) and still correlates with post-threshold density
+(−0.20) where no threshold acts. The interpretation of axes 1–3 stands. The
+density caveat on axis 1 changes from "possible thresholding artefact" to
+"tracks an underlying edge-weight property of unknown origin".
+
+The fixed-density rebuild (D4) is now a refinement rather than a blocker. The
+measure-set checks (communicability swapped for eigenvector centrality, or
+dropped) go ahead as agreed.
+
+---
+
 ## Open — needs a decision or an answer
 - **How far to take q** (D14). Options: (a) report q = 70 as "at least 70
   dimensions improve prediction" and stop; (b) extend to q = 100/150 to

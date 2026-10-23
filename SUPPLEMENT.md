@@ -40,6 +40,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S23 | What the axis tail encodes; split-half at q = 70 | why interpretation stops at three axes |
 | S24 | Nodal measures: robustness, redundancy, shape | whether to keep communicability; clustering's fragility |
 | S25 | Bootstrap and permutation null extended to 1,000 each | final intervals and p-values; supersedes the counts in S18 and S20 |
+| S26 | Axes refitted on unthresholded networks | axes 1–3 are not a thresholding artefact |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -63,6 +64,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Permutation null, 1,000 shuffles | corrected significance of each axis | all 15 axes p < 0.001, family-wise corrected | S25 |
 | Parametric bootstrap, 1,000 replicates | final loading and axis-size intervals | stable vs 200; 0.7–4% of calls changed | S25 |
 | Warm-start-only refits (gate) | can bootstrap refits drop the random starts? | no: loadings differ by up to 0.03; not used | S25 |
+| Refit on unthresholded networks | are axes 1–3 a thresholding artefact? | no: same axes (\|cos\| 0.89 / 0.91 / 0.71), same infants (r = 0.88 / 0.97 / 0.82) | S26 |
 | Anatomy of the axis tail | what do axes beyond 3 encode? | increasingly local: within-region coupling 33× chance in axes 21–70 | S23 |
 | Split-half replication at q = 70 | does the three-axis conclusion hold in the selected model? | axes 1–3: 0.91 / 0.80 / 0.73; tail replicates as blocks only | S23 |
 | Measure robustness to thresholding | which measures depend on preprocessing? | clustering 0.22; communicability 0.84; strength 0.92 | S24 |
@@ -1145,4 +1147,55 @@ against 1,265 s in a solo timing run. With eight tasks per node they compete
 for memory bandwidth. Planning figure for future runs: about 2.0 core-hours
 per replicate at q = 70, so ~10,000 core-hours (about 3.5 days on the 128-CPU
 allowance) for 5,000.
+
+---
+
+## S26 Axes refitted on unthresholded networks
+
+*2026-10-23. Produced by: `scripts/fit_final.py --variant unthresholded`
+(job 4301050) and `scripts/compare_variant_axes.py` (jobs 4301051, 4303540).
+Figure: `fig11_preprocessing_check`.*
+
+**Why.** Clustering, which dominates axis 1, ranks infants very differently in
+thresholded and unthresholded networks region by region (0.22, S24), and axis
+1 correlates with post-threshold network density (S14). So axis 1 might have
+been produced by the thresholding itself.
+
+**What.** The one-group model was refitted at q = 15 and q = 70 to the same
+three measures computed on the **unthresholded** networks: same infants,
+training-moment standardisation, 20 starts and 1000 sweeps. Both fits
+converged, and all 20 starts reached one optimum. A coordinate means the same
+region × measure in both versions, so axes were compared directly
+(Hungarian matching on |cosine|). Infants' scores on matched axes were also
+correlated.
+
+| | axis 1 | axis 2 | axis 3 | axes 4–8 |
+|---|---|---|---|---|
+| pattern similarity, \|cos\| (q = 70; q = 15 within 0.02) | **0.89** | **0.91** | **0.71** | 0.30–0.59 |
+| same infants? score correlation | **0.88** | **0.97** | **0.82** | — |
+| subspace overlap, axes 1–3 (chance 0.011) | 0.75 | | | 0.34 (4–8) |
+| share of variation beyond age: primary → unthresholded | 6.8% → **20.6%** | 4.8% → 6.7% | 4.1% → 5.4% | similar |
+| composition (primary → unthresholded) | 86% → 97% clustering | 82% → 82% strength | 40% → 48% communicability | |
+| r with thresholded-network density | −0.28 → −0.20 | −0.27 → −0.31 | −0.13 → 0.01 | |
+| r with head motion | 0.00 → −0.09 | +0.16 → +0.13 | −0.22 → −0.14 | |
+
+Interpretation:
+- **Axes 1–3 are not artefacts of thresholding.** The same three patterns
+  re-emerge from networks that were never thresholded. They agree about as
+  well as two independent halves of the sample do (S19: 0.91, 0.80, 0.73),
+  and they order the same infants (r = 0.82–0.97).
+- **Axis 1 is, if anything, stronger without thresholding:** 20.6% of
+  variation, and even more purely clustering. This reconciles with S24: per
+  region, clustering is threshold-sensitive (0.22), but its brain-wide shared
+  component, which is what axis 1 captures, is robust because it averages over
+  90 regions.
+- **Axis 1's density link persists (−0.20) where no threshold acts.** The
+  post-threshold density of an infant's network therefore reflects an
+  underlying property of its edge weights, one that also drives brain-wide
+  clustering, rather than being created by the threshold. Whether that
+  property is biological or acquisition-related (e.g. tractography or
+  streamline-count characteristics) is not settled by this check.
+- **Axis 3's motion link weakens** (−0.22 → −0.14), and its density link
+  disappears (−0.13 → 0.01).
+- As in S19 and S23, axes 4 and beyond do not reproduce individually.
 
