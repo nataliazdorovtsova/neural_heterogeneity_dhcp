@@ -59,14 +59,18 @@ def main():
     ap.add_argument("--n-init", type=int, default=5)
     ap.add_argument("--q", type=int, default=Q)
     ap.add_argument("--n-match", type=int, default=N_MATCH)
+    ap.add_argument("--variant", default=None, help="feature set (default: the primary network)")
     a = ap.parse_args()
     out_dir = OUT if a.q == Q else OUT.parent / f"split_half_q{a.q}"
+    suffix = f"_{a.variant}" if a.variant else ""
+    if a.variant:
+        out_dir = OUT.parent / f"split_half_q{a.q}{suffix}"
 
     t0 = time.time()
-    coh, Xraw = load()
+    coh, Xraw = load(a.variant) if a.variant else load()
     X, *_ = standardise(Xraw)
     B = splines.basis(age_for(coh, CLOCK))
-    full = np.load(paths.RESULTS / "final" / f"K1_q{a.q}.npz")
+    full = np.load(paths.RESULTS / "final" / f"K1_q{a.q}{suffix}.npz")
     L_full, *_ = principal(full["W"][0], full["psi"][0])
 
     rng = np.random.default_rng(SEED + a.split)

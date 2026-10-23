@@ -44,7 +44,10 @@ PERINFANT = paths.RESULTS / "perinfant"
 
 
 def spec_name(s):
-    return f"K{s['K']}_q{s['q']}_M{s['M']}_{s['clock']}_{s['covariance_sharing']}"
+    base = f"K{s['K']}_q{s['q']}_M{s['M']}_{s['clock']}_{s['covariance_sharing']}"
+    # Other feature sets are named apart, so they can never be mistaken for
+    # (or overwrite) the primary model-selection records.
+    return base if s.get("variant", VARIANT) == VARIANT else f"{base}_{s['variant']}"
 
 
 def load(variant=VARIANT):
@@ -64,7 +67,7 @@ def age_for(coh, clock):
 
 
 def run(spec, verbose=True):
-    coh, X = load()
+    coh, X = load(spec.get("variant", VARIANT))
     t = age_for(coh, spec["clock"])
     folds = coh.fold.values
     h = mfa.Hyper(P=jnp.asarray(splines.difference_penalty(spec["M"])),
@@ -126,6 +129,8 @@ def main():
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--n-iter", type=int, default=None,
                     help=f"ECM sweeps per restart (default {N_ITER}); raise for specs that did not converge")
+    ap.add_argument("--variant", default=VARIANT,
+                    help="feature set in results/features/ (default: the primary network)")
     a = ap.parse_args()
     if a.n_iter is not None:
         N_ITER = a.n_iter
@@ -133,7 +138,7 @@ def main():
         for i, s in enumerate(SPECS):
             print(f"{i:3d}  {spec_name(s)}")
         return
-    spec = SPECS[a.index]
+    spec = dict(SPECS[a.index], variant=a.variant)
     print(f"[{a.index}] {spec_name(spec)}")
     out = run(spec)
     if out is None:
@@ -152,7 +157,7 @@ def main():
             convergence=prov.threshold(1e-6, "relative change in penalised log lik at final sweep"),
             lam_prior=prov.threshold([1e-3, 1e-3], "Gamma(a0,b0) on smoothness precision"),
         ),
-        inputs=[paths.RESULTS / "features" / f"{VARIANT}.npz",
+        inputs=[paths.RESULTS / "features" / f"{spec['variant']}.npz",
                 paths.RESULTS / "cohort" / "cohort.csv"])
     # Each infant's held-out log density, for paired comparisons between models
     # (scripts/compare_models.py). Named after the provenance record it belongs to.

@@ -60,8 +60,8 @@ def load_records():
     for f in sorted(PERINFANT.glob("K*_q*.npz")):
         d = json.loads((PROV / f"{f.stem}.json").read_text())
         c = d["config"]
-        if c.get("n_iter") != N_ITER:
-            continue
+        if c.get("n_iter") != N_ITER or c.get("variant", "perbin25_mst") != "perbin25_mst":
+            continue                         # same budget, primary feature set only
         z = np.load(f)
         rows.append(dict(K=c["K"], q=c["q"], file=f.stem, converged=d["results"]["all_converged"],
                          lpd=pd.Series(z["lpd"], index=z["dhcp_id"].astype(str))))
