@@ -68,6 +68,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Warm-start-only refits (gate) | can bootstrap refits drop the random starts? | no: loadings differ by up to 0.03; not used | S25 |
 | Measure set: strength + clustering only | do conclusions need communicability? | no: same axes (0.99 / 0.99 / 0.94); K = 1 (z = 9.5, 18.5) | S27 |
 | Measure set: eigenvector centrality instead of communicability | do conclusions survive a different third measure? | axes 1–3 present (0.94 / 0.98 / 0.83), but a new 18% eigenvector axis; K = 2 at q = 15 (z = −4.0), tie at q = 25 | S27 |
+| Eigenvector set, K = 1 vs 2 at higher q | does one group win once there are enough axes? | yes: tie at q = 25, then K = 1 at q = 35 / 50 / 70 (z = 5.8 / 13.1 / 19.7) | S28 |
 | Eigenvector-set K = 2 groups inspected | are the groups infant subtypes? | no: they split on which hemisphere holds the eigenvector centrality (r = 0.81; dominant hub V = 0.77); no age, prematurity, sex or density difference | S28 |
 | Refit on unthresholded networks | are axes 1–3 a thresholding artefact? | no: same axes (\|cos\| 0.89 / 0.91 / 0.71), same infants (r = 0.88 / 0.97 / 0.82) | S26 |
 | Anatomy of the axis tail | what do axes beyond 3 encode? | increasingly local: within-region coupling 33× chance in axes 21–70 | S23 |
@@ -948,6 +949,10 @@ Core-hours from SLURM accounting (CPUTimeRAW: wall time × allocated CPUs).
 | bootstrap replicates 201–1,000 at 4 CPUs (S25) | 4283506 | 1,567 |
 | bootstrap at 8 CPUs, cancelled after 45 min for the 4-CPU rerun | 4282929 | ≈ 73 |
 | tail anatomy, q = 70 split-half, measure evaluation (S23–S24) | 4281650–2, 4282577 | ≈ 85 |
+| unthresholded refits and comparison (S26) | 4301050–1, 4303540 | ≈ 12 |
+| measure sets: features, CV, fits, split-half (S27) | 4303541–5 | 82 |
+| eigenvector set: K = 2 fit and inspection (S28b) | 4309285–6 | ≈ 2 |
+| eigenvector set: K = 1/2 CV at q = 35, 50, 70 (S28a) | 4309287–8 | 261 |
 
 The bootstrap was costed in advance for q = 15. The selection then chose
 q = 70, which made each refit take about 28 minutes and the run about 4× the
@@ -1323,4 +1328,34 @@ them.
   its variance (its 18% axis, S27).
 - The primary measure set stands. Communicability is retained as planned, and
   S27 shows the conclusions do not depend on it.
+
+### Part (a): one group vs two at higher q, eigenvector set
+
+*Job 4309287, 6 tasks: K = 1, 2 at q = 35, 50, 70, 20 starts per fold, 1000
+sweeps. Then job 4309288. 261 core-hours; the slowest fit (K = 2, q = 70)
+took 24 h.*
+
+Paired per-infant K = 1 minus K = 2, within the eigenvector set:
+
+| q | difference ± SE | z | favours |
+|---|---|---|---|
+| 15 | −2,599 ± 644 | −4.0 | two groups |
+| 25 | +330 ± 637 | 0.5 | tie |
+| 35 | +4,178 ± 725 | **5.8** | one group |
+| 50 | +12,805 ± 976 | **13.1** | one group |
+| 70 | +28,751 ± 1,459 | **19.7** | one group |
+
+The preference for two groups at q = 15 reverses once the model has enough
+axes. This is the substitution seen in the primary set (S16), where two
+groups also win at q ≤ 5 and lose from q = 15. It is simply shifted to higher
+q, because eigenvector centrality adds large extra dimensions (S27).
+
+Both explanations raised in S27 hold together:
+- **at low q,** the extra (largely hemispheric) variance of eigenvector
+  centrality is absorbed by a two-group split along the left/right
+  localisation (part b);
+- **with enough axes,** that variance is modelled as continuous variation and
+  one group wins decisively.
+
+**In no measure set does the evidence support infant subtypes.**
 

@@ -391,8 +391,9 @@ dropped) go ahead as agreed.
 - ~~**Eigenvector centrality and the group question** (S27).~~ *(b) answered
   in S28: the groups are a left/right hemispheric localisation of eigenvector
   centrality, unrelated to age, prematurity, sex or density. Eigenvector
-  centrality is not adopted. (a), the higher-q comparison, is running for
-  completeness.*
+  centrality is not adopted. (a) answered in S28: one group wins at
+  q = 35, 50, 70 (z = 5.8, 13.1, 19.7). Resolved: no measure set supports
+  subtypes.*
   Original note: With eigenvector
   centrality in place of communicability, K = 2 beats K = 1 at q = 15
   (z = −4.0) and the two tie at q = 25. To tell "needs more axes" from
