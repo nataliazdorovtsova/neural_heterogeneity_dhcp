@@ -217,12 +217,12 @@ def responsibilities(X, B, p: Params):
 # --------------------------------------------------- init and simulation ----
 
 def init_params(X, B, K, q, rng, h: Hyper, jitter: float = 0.1) -> Params:
-    """Initialisation per the methods supplement.
+    """Initialisation, following the methods plan with one deviation.
 
-    A linear age effect is removed before k-means so the initial grouping is not
-    determined solely by age; loadings start from the leading principal
-    components of within-group residuals and uniquenesses from residual
-    variances. `jitter` perturbs the k-means seeding so repeated calls with
+    The fitted spline age trend (not the plan's linear trend; AUDIT.md finding E)
+    is removed before k-means, so the initial grouping reflects neither age nor
+    its curvature. Loadings start from the leading principal components of
+    within-group residuals and uniquenesses from residual variances. `jitter` perturbs the k-means seeding so repeated calls with
     different rngs give genuinely different starts.
     """
     import numpy as np

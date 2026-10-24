@@ -102,6 +102,12 @@ group-specific only, which is the general case and all that K=1 requires.
 
 ## Stage 5 — Selection
 
+> **Status 2026-10-24 (AUDIT.md):** greedy steps 1 and 4 are done
+> (q at K = 1, extended to 70; paired per-infant comparison, S16), and
+> validation was scored once (S17). Steps 2, 3 and 5 (covariance sharing,
+> trajectory shapes, clocks), the recovery simulation (17) and the preterm ARI
+> (16) are not done.
+
 15. **Greedy search**, ~32 specifications in the five documented steps, scored by
     held-out log predictive density under the frozen folds. Submitted as **one
     array task per specification** (32 tasks, 4 concurrent), not one job per
@@ -119,6 +125,11 @@ group-specific only, which is the general case and all that K=1 requires.
 ---
 
 ## Stage 6 — Stability and reporting
+
+> **Status 2026-10-24 (AUDIT.md):** 1,000 bootstrap replicates done (S25),
+> motion checks done (S14, S26), axes reported as brain maps (figures 3–6).
+> Trajectory bands, bootstrap principal angles and axes as eigenvectors of C
+> are not done.
 
 19. **200 parametric bootstrap refits** of the selected specification →
     pointwise intervals for trajectories, eigenvalues, eigenvectors, group

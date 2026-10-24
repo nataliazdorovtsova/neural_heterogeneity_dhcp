@@ -388,6 +388,10 @@ dropped) go ahead as agreed.
 ---
 
 ## Open — needs a decision or an answer
+- **Audit of 2026-10-24** (`AUDIT.md`): axis 1 partly tracks each infant's
+  maximum edge weight through the Onnela normalisation (r = −0.62 after age);
+  test with a cohort-wide normaliser before axis 1 is interpreted. AUDIT.md
+  lists the full prioritised task list.
 - ~~**Eigenvector centrality and the group question** (S27).~~ *(b) answered
   in S28: the groups are a left/right hemispheric localisation of eigenvector
   centrality, unrelated to age, prematurity, sex or density. Eigenvector
@@ -413,11 +417,8 @@ dropped) go ahead as agreed.
   upward for axes ≥ 5. Needed only if those sizes are reported.
 - **Fixed-density rebuild** (D4) — asked, awaiting ab15.
 - **Sign-off on D10** (log on clustering rather than communicability).
-- **Knot span** — observed PMA is 26.71–45.14; the proposed 26–45 basis
-  extrapolates for 2 infants. Widen to 26.5–45.5.
-- **Basis size M** — M = 8 is small for a true P-spline (Eilers–Marx assume a
-  generous basis with the penalty doing the work). Either raise to ~15–20 or
-  stop calling it a P-spline.
+- ~~**Knot span**~~ — resolved: 26.5–45.5 (SUPPLEMENT S8, `model/splines.py`).
+- ~~**Basis size M**~~ — resolved: M = 20 (SUPPLEMENT S8).
 - **Reference age** for the both-clocks model (raised in review) — "centre at 40 wk
   PMA" is underdetermined; need a profile, e.g. PMA 40 / GA 40 / PNA 0.
 - **Group ordering statistic** — ordering by mean-across-coordinates is
