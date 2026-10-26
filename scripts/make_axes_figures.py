@@ -212,7 +212,7 @@ def fig_overview(P, others, coh):
                               label=f"C: compared with q = {o['q']}"))
     axes[1, 0].legend(handles=handles, loc="lower left", handlelength=2.2)
     fig.text(0.06, 0.035, f"One-group model (K = 1), q = {q}, all {len(coh)} training infants; "
-             "axes ordered by size and signed so higher = more of the measures.\n"
+             "axes are eigenvectors of the covariance, largest first, each signed so its largest loading is positive.\n"
              f"D: bold = |r| ≥ {r_crit:.2f} (Bonferroni, {r.size} tests); age at scan is "
              "modelled by the trajectories, so its column is ~0.",
              fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY, va="top")
