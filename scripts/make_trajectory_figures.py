@@ -126,9 +126,9 @@ def fig_maps(std, std_b):
     idx = [int(np.argmin(np.abs(T - a))) for a in AGES]
     vmax = float(np.abs(std[idx]).max())
     cmap, norm = fs.DIVERGING, Normalize(-vmax, vmax)
-    fig = plt.figure(figsize=fs.FIGURE_SIZES["full_page"])
-    gs = fig.add_gridspec(3, 2 * len(AGES), left=0.08, right=0.99, top=0.9, bottom=0.14,
-                          wspace=0.02, hspace=0.12)
+    fig = plt.figure(figsize=fs.FIGURE_SIZES["double_column"])
+    gs = fig.add_gridspec(3, 2 * len(AGES), left=0.06, right=0.99, top=0.84, bottom=0.2,
+                          wspace=0.02, hspace=0.05)
     for m, meas in enumerate(MEASURES):
         for a, ti in enumerate(idx):
             v = std[ti, m::3]
@@ -138,17 +138,17 @@ def fig_maps(std, std_b):
                 ax = fig.add_subplot(gs[m, 2 * a + c])
                 draw_surface(ax, meshes, colours, view)
                 if m == 0 and c == 0:
-                    ax.text(1.0, 1.15, f"{AGES[a]} weeks", transform=ax.transAxes, ha="center",
+                    ax.text(1.0, 1.08, f"{AGES[a]} weeks", transform=ax.transAxes, ha="center",
                             fontsize=14, fontweight="bold")
                 if a == 0 and c == 0:
                     ax.text(-0.08, 0.5, LABEL[meas], transform=ax.transAxes, ha="right",
                             va="center", fontsize=fs.NOTE_SIZE, fontweight="bold", rotation=90)
     sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
-    fs.horizontal_colorbar(fig, sm, [0.3, 0.085, 0.42, 0.012],
+    fs.horizontal_colorbar(fig, sm, [0.3, 0.12, 0.42, 0.025],
                            "SD from the training mean over all ages")
-    fig.suptitle("How each region develops", x=0.08, y=0.985, ha="left", fontsize=16,
+    fig.suptitle("How each region develops", x=0.06, y=1.0, ha="left", fontsize=16,
                  fontweight="bold")
-    fig.text(0.08, 0.0, f"Selected model (K = 1, q = {Q}), left hemisphere, lateral and medial. "
+    fig.text(0.06, -0.02, f"Selected model (K = 1, q = {Q}), left hemisphere, lateral and medial. "
              "Light grey = 95% bootstrap band\nincludes 0 at that age; dark grey = tissue "
              "outside the 90 AAL regions.", fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY,
              va="top")
