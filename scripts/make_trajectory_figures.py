@@ -127,7 +127,7 @@ def fig_maps(std, std_b):
     vmax = float(np.abs(std[idx]).max())
     cmap, norm = fs.DIVERGING, Normalize(-vmax, vmax)
     fig = plt.figure(figsize=fs.FIGURE_SIZES["double_column"])
-    gs = fig.add_gridspec(3, 2 * len(AGES), left=0.06, right=0.99, top=0.84, bottom=0.2,
+    gs = fig.add_gridspec(3, 2 * len(AGES), left=0.12, right=0.99, top=0.84, bottom=0.2,
                           wspace=0.02, hspace=0.05)
     for m, meas in enumerate(MEASURES):
         for a, ti in enumerate(idx):
@@ -141,8 +141,9 @@ def fig_maps(std, std_b):
                     ax.text(1.0, 1.08, f"{AGES[a]} weeks", transform=ax.transAxes, ha="center",
                             fontsize=14, fontweight="bold")
                 if a == 0 and c == 0:
-                    ax.text(-0.08, 0.5, LABEL[meas], transform=ax.transAxes, ha="right",
-                            va="center", fontsize=fs.NOTE_SIZE, fontweight="bold", rotation=90)
+                    ax.text(-0.06, 0.5, LABEL[meas].replace("communicability", "communic-\nability"),
+                            transform=ax.transAxes, ha="right", va="center",
+                            fontsize=fs.NOTE_SIZE, fontweight="bold")
     sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     fs.horizontal_colorbar(fig, sm, [0.3, 0.12, 0.42, 0.025],
                            "SD from the training mean over all ages")
