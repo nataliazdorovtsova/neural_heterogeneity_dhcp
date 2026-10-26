@@ -288,8 +288,12 @@ def fig_axis_brain(j, P, meshes, lab, t2, k_deep, vmax, corr_text, boot=None):
                     color=[fs.POSITIVE_COLOUR if x > 0 else fs.NEGATIVE_COLOUR for x in vals],
                     value_fmt=None if boot is not None else "{:+.2f}")
     if boot is not None:
-        lo, hi = boot["lo"][top, j], boot["hi"][top, j]
-        ax.errorbar(vals, np.arange(len(top)), xerr=[vals - lo, hi - vals], fmt="none",
+        # the interval's offsets from the bootstrap's own estimate, centred on
+        # the reported (C-eigenvector) loading
+        est = boot["L"][top, j]
+        down = np.clip(est - boot["lo"][top, j], 0, None)
+        up = np.clip(boot["hi"][top, j] - est, 0, None)
+        ax.errorbar(vals, np.arange(len(top)), xerr=[down, up], fmt="none",
                     ecolor=fs.TEXT_PRIMARY, elinewidth=0.8, capsize=3, zorder=4)
     ax.axvline(0, color=fs.TEXT_PRIMARY, lw=0.8)
     ax.set_yticks(range(len(top)),
@@ -388,7 +392,18 @@ def main():
         z = np.load(bf)
         if int(z["q"]) == q:
             boot = {k: z[k] for k in z.files}
-            print(f"using bootstrap intervals ({int(z['n_boot'])} replicates)")
+            # The bootstrap ran on the principal axes of W; the reported axes are
+            # eigenvectors of C (AUDIT.md finding B). Directions agree to
+            # |cos| >= 0.994, but signs may differ: align each axis's interval.
+            Lb = boot["L"]
+            n = min(Lb.shape[1], P["L"].shape[1])
+            flip = np.sign((Lb[:, :n] * P["L"][:, :n]).sum(0))
+            for j in np.where(flip < 0)[0]:
+                Lb[:, j] *= -1
+                boot["lo"][:, j], boot["hi"][:, j] = -boot["hi"][:, j].copy(), -boot["lo"][:, j].copy()
+            boot["L"] = Lb
+            print(f"using bootstrap intervals ({int(z['n_boot'])} replicates); "
+                  f"sign-aligned axes: {[int(j) + 1 for j in np.where(flip < 0)[0]]}")
 
     left = np.isin(lab, np.arange(1, 91, 2)); right = np.isin(lab, np.arange(2, 91, 2))
     xs = np.arange(lab.shape[0])

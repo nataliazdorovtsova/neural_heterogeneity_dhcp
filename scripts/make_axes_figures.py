@@ -27,6 +27,7 @@ import paths
 import atlas
 import figstyle as fs
 from features import MEASURES
+from model import splines
 from scripts.run_spec import load
 
 FINAL = paths.RESULTS / "final"
@@ -49,18 +50,37 @@ COVARIATES = {                                # label -> cohort column (or deriv
 
 
 def principal_axes(q):
+    """Axes as the methods plan defines them (section 5): eigenvectors of the
+    within-group covariance C = W W' + Psi, largest eigenvalue first, each signed
+    so its largest-magnitude coordinate is positive.
+
+    L          eigenvector x sqrt(eigenvalue): the covariance between each
+               coordinate and the unit-variance axis score (SD units)
+    scores     each infant's age-detrended data projected onto the eigenvector,
+               scaled to unit variance under the model
+    share      eigenvalue / trace(C): share of variation beyond age
+    rest       1 - sum of the q shares: variation outside the q leading axes
+
+    Until 2026-10-24 the axes were the principal axes of W alone, with loadings
+    signed to sum positive. The two agree to |cos| >= 0.994 for axes 1-5
+    (AUDIT.md finding B); the plan's definition is used from here on.
+    """
     f = FINAL / f"K1_q{q}.npz"
     if not f.exists():
         return None
     d = np.load(f)
     W, psi = d["W"][0], d["psi"][0]              # K = 1: (270, q), (270,)
-    U, S, Vt = np.linalg.svd(W, full_matrices=False)
-    L = U * S                                    # loadings, largest axis first
-    scores = d["scores"][:, 0, :] @ Vt.T         # W theta = (U S)(Vt theta)
-    sign = np.where(L.sum(0) < 0, -1.0, 1.0)
-    total = (S ** 2).sum() + psi.sum()
-    return dict(q=q, L=L * sign, scores=scores * sign, share=S ** 2 / total,
-                noise_share=psi.sum() / total, ids=d["dhcp_id"])
+    C = W @ W.T + np.diag(psi)
+    ev, V = np.linalg.eigh(C)
+    ev, V = ev[::-1][:q], V[:, ::-1][:, :q]
+    V = V * np.where(V[np.abs(V).argmax(0), np.arange(q)] < 0, -1.0, 1.0)
+    coh, Xraw = load()
+    assert (coh.dhcp_id.astype(str).values == d["dhcp_id"]).all(), "infant order mismatch"
+    X = (Xraw - d["mu"]) / d["sd"]
+    resid = X - splines.basis(coh.scan_age.values) @ d["beta"][0]
+    total = np.trace(C)
+    return dict(q=q, L=V * np.sqrt(ev), scores=resid @ V / np.sqrt(ev), share=ev / total,
+                noise_share=1.0 - ev.sum() / total, ids=d["dhcp_id"])
 
 
 def lobe_table(L, n):
@@ -124,7 +144,7 @@ def fig_overview(P, others, coh):
     fs.rounded_bars(ax, x[N_SHOW:], P["share"][N_SHOW:] * 100, color=fs.Q_COLOURS[q])
     cum = np.cumsum(P["share"]) * 100
     ax.annotate(f"top 3: {cum[2]:.0f}%  ·  top {N_SHOW}: {cum[N_SHOW - 1]:.0f}%  ·  "
-                f"all {q}: {cum[-1]:.0f}%\nregion-specific: {P['noise_share'] * 100:.0f}%",
+                f"all {q}: {cum[-1]:.0f}%\nbeyond the {q} axes: {P['noise_share'] * 100:.0f}%",
                 (0.98, 0.98), xycoords="axes fraction", ha="right", va="top",
                 fontsize=fs.NOTE_SIZE)
     ax.set_xticks(x[::2])
@@ -258,7 +278,7 @@ def main():
 
     fs.apply_style()
     print("variance share per axis (%):", np.round(P["share"] * 100, 1))
-    print(f"noise share {P['noise_share'] * 100:.1f}%")
+    print(f"share beyond the {PRIMARY_Q} axes {P['noise_share'] * 100:.1f}%")
     for j in range(N_SHOW):
         v = P["L"][:, j]
         top = np.argsort(-np.abs(v))[:6]

@@ -50,8 +50,21 @@ def spec_name(s):
     return base if s.get("variant", VARIANT) == VARIANT else f"{base}_{s['variant']}"
 
 
+# Covariates whose source codes missing values as -999 or 0 (AUDIT.md finding I).
+# Neither is a possible value for these measurements, so both become NaN. The
+# frozen cohort file is left untouched; cleaning happens on load.
+SENTINEL_COLUMNS = ("birth_weight", "head_circumference_scan")
+
+
+def clean_covariates(coh):
+    coh = coh.copy()
+    for col in SENTINEL_COLUMNS:
+        coh.loc[coh[col] <= 0, col] = np.nan
+    return coh
+
+
 def load(variant=VARIANT):
-    coh = pd.read_csv(paths.RESULTS / "cohort" / "cohort.csv")
+    coh = clean_covariates(pd.read_csv(paths.RESULTS / "cohort" / "cohort.csv"))
     feat = np.load(paths.RESULTS / "features" / f"{variant}.npz")
     X = feat["X"].reshape(len(feat["X"]), -1)           # (n, 270)
     prim = coh.in_primary.values & (coh.split == "train").values

@@ -4,6 +4,16 @@
 
   perbin25_mst_eig   strength, log clustering, eigenvector centrality  (753, 90, 3)
   perbin25_mst_sc    strength, log clustering                           (753, 90, 2)
+  perbin25_mst_cl    strength, log clustering WITHOUT per-infant max-weight
+                     normalisation, communicability                     (753, 90, 3)
+
+perbin25_mst_cl tests AUDIT.md finding A. Onnela clustering divides every
+weight by the infant's own maximum weight, which scales all 90 regions'
+clustering by 1 / max W. Since c_onnela = tri(W / max W) / (k (k - 1)) and the
+geometric-mean triangle term is homogeneous of degree 1, the un-normalised
+value is exactly c_onnela * max W: the same normaliser for every infant (none).
+The log floor keeps the primary definition's ratio to the smallest non-zero
+value, so the normalisation is the only change.
 
 Strength and clustering are copied unchanged from the primary feature file, so
 the only difference from the primary set is the third measure. Eigenvector
@@ -21,6 +31,7 @@ from scipy import stats
 
 import bct
 import paths
+from features import clustering_onnela, CLUSTERING_EPS
 
 OUT = paths.RESULTS / "features"
 
@@ -60,6 +71,26 @@ def main():
                         measures=np.array(["strength", "log_clustering"]),
                         dhcp_id=coh.dhcp_id.values)
     print("wrote perbin25_mst_eig.npz (753, 90, 3) and perbin25_mst_sc.npz (753, 90, 2)")
+
+    # un-normalised clustering (AUDIT.md finding A)
+    A = np.load(paths.STACK, mmap_mode="r")
+    c_norm = np.empty((A.shape[2], 90)); maxw = np.empty(A.shape[2])
+    for i in range(A.shape[2]):
+        W = np.array(A[:, :, i], dtype=float)
+        c_norm[i] = clustering_onnela(W)
+        maxw[i] = W.max()
+    c_raw = c_norm * maxw[:, None]
+    # check against the stored primary feature, which is log(c_norm + eps)
+    assert np.allclose(np.log(c_norm + CLUSTERING_EPS), X[:, :, 1]), "clustering does not match"
+    min_norm, min_raw = c_norm[c_norm > 0].min(), c_raw[c_raw > 0].min()
+    eps_raw = min_raw * CLUSTERING_EPS / min_norm
+    print(f"un-normalised clustering: smallest non-zero {min_raw:.3g}, log floor {eps_raw:.3g} "
+          f"(primary: {min_norm:.3g}, {CLUSTERING_EPS:g})")
+    np.savez_compressed(OUT / "perbin25_mst_cl.npz",
+                        X=np.stack([X[:, :, 0], np.log(c_raw + eps_raw), X[:, :, 2]], axis=2),
+                        measures=np.array(["strength", "log_clustering_unnormalised", "communicability"]),
+                        dhcp_id=coh.dhcp_id.values, max_weight=maxw, clustering_eps=eps_raw)
+    print("wrote perbin25_mst_cl.npz (753, 90, 3)")
 
 
 if __name__ == "__main__":
