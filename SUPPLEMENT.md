@@ -46,6 +46,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S29 | Axis 2 and the per-infant weight scale | axis 2 is the infant's total connection weight |
 | S30 | Developmental trajectories (research question 2) | strength doubles 30→42 weeks; cortical vs subcortical divergence |
 | S31 | Axes as eigenvectors of C; bootstrap principal angles | plan-compliant reporting; axes 1–3 stable within 12–21° |
+| S32 | Clustering without per-infant max normalisation | **axis 1 was an artefact of Onnela's normalisation**; axes 2–3 and K = 1 stand |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -75,6 +76,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Eigenvector-set K = 2 groups inspected | are the groups infant subtypes? | no: they split on which hemisphere holds the eigenvector centrality (r = 0.81; dominant hub V = 0.77); no age, prematurity, sex or density difference | S28 |
 | Axes vs per-infant weight scale (age-adjusted) | is axis 2 a global scale? | yes: r = 0.89 with total edge weight; axis 1: r = −0.62 with max edge weight | S29 |
 | Bootstrap principal angles | how stable are axis directions? | median 12° / 19° / 21° (axes 1–3); subspace 1–3 median 17° | S31 |
+| Clustering without max-weight normalisation | is axis 1 real? | **no**: it vanishes (\|cos\| 0.09–0.11; share 6.8% → 0.7%; infant r = 0.06); axes 2–3 survive (0.81 / 0.84); K = 1 (z = 9.5, 15.5) | S32 |
 | Refit on unthresholded networks | are axes 1–3 a thresholding artefact? | no: same axes (\|cos\| 0.89 / 0.91 / 0.71), same infants (r = 0.88 / 0.97 / 0.82) | S26 |
 | Anatomy of the axis tail | what do axes beyond 3 encode? | increasingly local: within-region coupling 33× chance in axes 21–70 | S23 |
 | Split-half replication at q = 70 | does the three-axis conclusion hold in the selected model? | axes 1–3: 0.91 / 0.80 / 0.73; tail replicates as blocks only | S23 |
@@ -1477,4 +1479,60 @@ subspaces.
 Axes 1–3 are well determined individually and very well as a subspace. From
 axis 4 on, angles of 30–50° mean the directions are only loosely fixed. This
 is consistent with the split-half results (S19, S23).
+
+---
+
+## S32 Clustering without per-infant max normalisation: axis 1 was an artefact
+
+*2026-10-26. Jobs 4323688–92: features, one-group fits at q = 15 and 70
+(20 starts, 1000 sweeps; converged, restart spread 0.0), K = 1 vs 2 CV at
+q = 15 and 25, split-half at q = 15, and `check_clustering_norm.py`. Figure:
+`fig14_clustering_norm`. Tests AUDIT.md finding A.*
+
+**Change.** Onnela clustering divides every edge weight by the infant's
+maximum weight, which shifts all 90 regions' log clustering by −log(max W).
+Feature set `perbin25_mst_cl` uses the same Onnela formula without that
+division. Since the triangle term is homogeneous of degree 1, this is exactly
+c_onnela × max W. Strength, communicability, infants, folds and fitting
+settings are unchanged. The log floor keeps the primary definition's ratio to
+the smallest non-zero value (0.00102 vs a smallest non-zero of 0.00467).
+
+| primary axis | 1 (clustering) | 2 (strength) | 3 (front vs side) | 4 | 5 |
+|---|---|---|---|---|---|
+| pattern similarity, \|cos\| (q = 70; q = 15 within 0.02) | **0.11** | 0.81 | 0.84 | 0.62 | 0.76 |
+| same infants? score correlation | **0.06** | **0.94** | **0.83** | 0.61 | 0.75 |
+| share: primary → without normalisation | 6.8% → **0.7%** | 4.8% → 7.8% | 4.1% → 4.4% | 2.9% → 3.5% | 2.5% → 2.7% |
+| r with age-adjusted log max weight: primary → new | −0.62 → **0.00** | +0.50 → +0.55 | −0.19 → +0.13 | +0.23 → −0.22 | −0.16 → +0.09 |
+
+The model without the normalisation (its own axes, q = 70):
+
+| new axis | share | strength / clustering / communicability | split-half (q = 15) |
+|---|---|---|---|
+| 1 (= primary axis 2) | 7.9% | 0.50 / 0.45 / 0.06 | 0.94 |
+| 2 (= primary axis 3) | 4.5% | 0.29 / 0.23 / 0.49 | 0.79 |
+| 3 | 3.6% | 0.24 / 0.55 / 0.21 | 0.76 |
+
+K = 1 vs K = 2 within this feature set: +3.82 per infant at q = 15 (z = 9.5)
+and +8.83 at q = 25 (z = 15.5). One population stands.
+
+Interpretation:
+- **Primary axis 1 ("clustering everywhere") was produced by Onnela's
+  per-infant max normalisation.** Without it, the axis disappears: its best
+  match is a 0.7% axis, |cos| 0.11, and infant scores correlate at 0.06. Its
+  −0.62 correlation with the maximum edge weight (S29) is the normaliser
+  itself. This also explains why it survived without thresholding (S26): the
+  maximum weight varies there too. **Axis 1 must not be interpreted as
+  biology.**
+- **Primary axes 2 and 3 are robust** to this change (patterns 0.81 / 0.84;
+  infant scores 0.94 / 0.83). So is the one-population result.
+- **The leading axis is now a global weight-scale axis.** Without the
+  normalisation, clustering also scales with an infant's overall weights, so
+  the global-scale axis (primary axis 2, r = 0.89 with total weight, S29)
+  carries both strength and clustering.
+- The deeper issue is a per-infant global scale. Max normalisation removes it
+  from clustering but replaces it with noise from one extreme edge. No
+  normalisation leaves it in. The principled option is to normalise each
+  infant's weights by a robust global scale (e.g. total or mean weight)
+  before computing every measure, and to report that scale as a separate
+  infant-level variable. This is open in DECISIONS.md.
 

@@ -387,7 +387,34 @@ dropped) go ahead as agreed.
 
 ---
 
+## D17. Axis 1 is withdrawn: it was produced by Onnela's per-infant max normalisation
+
+*2026-10-26. Evidence: SUPPLEMENT S29, S32.* With clustering computed without
+dividing by each infant's maximum edge weight, primary axis 1 disappears:
+- best match |cos| 0.11;
+- share 6.8% → 0.7%;
+- infant scores r = 0.06.
+
+Its −0.62 correlation with the maximum weight was the normaliser. Axes 2 and 3
+survive (0.81 / 0.84; infant scores 0.94 / 0.83), and so does K = 1
+(z = 9.5, 15.5). Axis 1 is not reported as biology. D16's statement that axis
+1 is "not a thresholding artefact" stands, but S32 shows it is a normalisation
+artefact.
+
+---
+
 ## Open — needs a decision or an answer
+- **How to handle the per-infant global weight scale** (S29, S32). Axis 2
+  ≈ total edge weight (r = 0.89). Max normalisation of clustering creates
+  axis 1; no normalisation lets clustering join the global-scale axis.
+  Options:
+  - (a) keep raw weights and report the global-scale axis as such;
+  - (b) normalise each infant's weights by a robust scale (total or mean
+    weight) before computing every measure, report that scale as a separate
+    infant-level variable (with its own trajectory and correlates), and
+    re-run the main pipeline on the scale-free features. The validation set
+    has been used once already, so any re-scoring must be reported as a
+    second look.
 - **Audit of 2026-10-24** (`AUDIT.md`): axis 1 partly tracks each infant's
   maximum edge weight through the Onnela normalisation (r = −0.62 after age);
   test with a cohort-wide normaliser before axis 1 is interpreted. AUDIT.md

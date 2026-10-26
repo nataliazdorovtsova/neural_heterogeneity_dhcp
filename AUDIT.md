@@ -124,7 +124,7 @@ The frozen cohort file is unchanged.
 
 | task | status |
 |---|---|
-| 1. clustering normalisation | running (jobs 4323688–92); results in S32 |
+| 1. clustering normalisation | **done, S32: finding A confirmed.** Axis 1 vanishes without the max normalisation (\|cos\| 0.11, share 6.8% → 0.7%); axes 2–3 and K = 1 stand |
 | 2. global weight scale | done, S29: axis 2 ≈ total edge weight (r = 0.89) |
 | 3. trajectories (question 2) | done, S30, figures 15–16 |
 | 4. axes from C, sign rule, principal angles | done, S31 (findings B and C resolved) |
