@@ -43,6 +43,9 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S26 | Axes refitted on unthresholded networks | axes 1–3 are not a thresholding artefact |
 | S27 | Measure sets: communicability dropped or replaced by eigenvector centrality | conclusions do not depend on communicability; eigenvector centrality changes the group question |
 | S28 | What separates the eigenvector-set "groups" | a left/right localisation of eigenvector centrality, not infant subtypes |
+| S29 | Axis 2 and the per-infant weight scale | axis 2 is the infant's total connection weight |
+| S30 | Developmental trajectories (research question 2) | strength doubles 30→42 weeks; cortical vs subcortical divergence |
+| S31 | Axes as eigenvectors of C; bootstrap principal angles | plan-compliant reporting; axes 1–3 stable within 12–21° |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -70,6 +73,8 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Measure set: eigenvector centrality instead of communicability | do conclusions survive a different third measure? | axes 1–3 present (0.94 / 0.98 / 0.83), but a new 18% eigenvector axis; K = 2 at q = 15 (z = −4.0), tie at q = 25 | S27 |
 | Eigenvector set, K = 1 vs 2 at higher q | does one group win once there are enough axes? | yes: tie at q = 25, then K = 1 at q = 35 / 50 / 70 (z = 5.8 / 13.1 / 19.7) | S28 |
 | Eigenvector-set K = 2 groups inspected | are the groups infant subtypes? | no: they split on which hemisphere holds the eigenvector centrality (r = 0.81; dominant hub V = 0.77); no age, prematurity, sex or density difference | S28 |
+| Axes vs per-infant weight scale (age-adjusted) | is axis 2 a global scale? | yes: r = 0.89 with total edge weight; axis 1: r = −0.62 with max edge weight | S29 |
+| Bootstrap principal angles | how stable are axis directions? | median 12° / 19° / 21° (axes 1–3); subspace 1–3 median 17° | S31 |
 | Refit on unthresholded networks | are axes 1–3 a thresholding artefact? | no: same axes (\|cos\| 0.89 / 0.91 / 0.71), same infants (r = 0.88 / 0.97 / 0.82) | S26 |
 | Anatomy of the axis tail | what do axes beyond 3 encode? | increasingly local: within-region coupling 33× chance in axes 21–70 | S23 |
 | Split-half replication at q = 70 | does the three-axis conclusion hold in the selected model? | axes 1–3: 0.91 / 0.80 / 0.73; tail replicates as blocks only | S23 |
@@ -1358,4 +1363,118 @@ Both explanations raised in S27 hold together:
   one group wins decisively.
 
 **In no measure set does the evidence support infant subtypes.**
+
+---
+
+## S29 Axis 2 and the per-infant weight scale
+
+*2026-10-26. `scripts/weight_scale_check.py` (job 4323693). Selected model,
+K = 1, q = 70; axes as in S31. Every quantity is adjusted for PMA with the
+model's penalised spline, and birth weight also for GA at birth.*
+
+Strength is measured in raw edge-weight units, so anything that scales an
+infant's whole connectome moves every region's strength together. Correlations
+with axis scores:
+
+| per-infant quantity (age-adjusted) | n | axis 1 | axis 2 | axis 3 |
+|---|---|---|---|---|
+| log total edge weight | 569 | −0.07 | **+0.89** | −0.16 |
+| log maximum edge weight | 569 | **−0.62** | +0.50 | −0.19 |
+| head circumference at scan | 543 | +0.06 | +0.34 | −0.09 |
+| birth weight (also GA-adjusted) | 568 | +0.01 | +0.26 | −0.15 |
+| post-threshold network density | 569 | −0.39 | −0.31 | −0.20 |
+
+Between the quantities: total weight correlates with head circumference at
++0.40, with birth weight at +0.28 and with maximum weight at +0.63.
+
+**Axis 2 is the infant's overall connection weight** (r = 0.89). Part of it
+tracks body and head size (head circumference +0.34), so part is plausibly
+biological. The rest is a global scaling of the weights whose origin
+(biological or acquisition-related, e.g. tractography normalisation) the data
+here cannot settle. Two ways to report it:
+- as a global-scale axis, stated as such;
+- as relative strength (each region's strength divided by the infant's total),
+  to ask whether a regional strength pattern remains once the global scale is
+  removed.
+
+Axis 1's −0.62 with maximum weight is AUDIT.md finding A, tested in S32.
+
+The sentinel codes in birth weight and head circumference (AUDIT finding I)
+were cleaned before this analysis; n reflects the remaining missing values.
+
+---
+
+## S30 Developmental trajectories (research question 2)
+
+*2026-10-26. `scripts/make_trajectory_figures.py` (jobs 4323694, 4323700).
+Figures: `fig15_trajectories`, `fig16_trajectory_maps`.*
+
+The selected model's mean trajectory μ(t) = B(t)β, back-transformed to each
+measure's original units, with pointwise 95% bands from the 1,000 bootstrap
+replicates (S25). Bands are conditional on the selected model.
+
+**Averaged over the 90 regions, change from 30 to 42 weeks PMA:**
+
+| measure | at 30 weeks | at 42 weeks | change (95% band) | change in SD units |
+|---|---|---|---|---|
+| strength (edge-weight units) | 9.17 | 19.80 | **+10.63 (10.18 to 11.02)** | +2.19 |
+| log clustering | −4.173 | −4.116 | +0.057 (0.020 to 0.095) | +0.06 |
+| communicability | 0.01637 | 0.01646 | +0.00009 (0.00005 to 0.00013) | +0.04 |
+
+**By lobe (figure 15, D–F):**
+- Strength rises steeply in every cortical lobe, most in parietal, but much
+  less in subcortical regions.
+- Clustering and communicability rise in frontal, parietal and occipital
+  cortex but **fall in subcortical and limbic regions**.
+
+Averaged over the brain, these opposing trends nearly cancel, which is why
+clustering and communicability barely change on average. The regional maps
+(figure 16, at 30, 34, 38 and 42 weeks) show the same divergence.
+
+Caveats:
+- The occipital clustering curve oscillates below 30 weeks, where few infants
+  were scanned; its band is correspondingly wide.
+- The global rise in strength overlaps axis 2's weight-scale question (S29):
+  part of the developmental increase may be a change in overall weight scale.
+
+---
+
+## S31 Axes as eigenvectors of C; bootstrap principal angles
+
+*2026-10-26. `scripts/make_axes_figures.py` (`principal_axes`) and
+`scripts/summarise_bootstrap.py` (job 4323695). Resolves AUDIT.md findings B
+and C.*
+
+**Reporting now follows the methods plan (section 5).** Axes are the
+eigenvectors of the within-group covariance C = WW′ + Ψ, largest eigenvalue
+first, each signed so its largest-magnitude coordinate is positive:
+- loadings are eigenvector × √eigenvalue;
+- infant scores are projections of the age-detrended data onto each
+  eigenvector, scaled to unit variance;
+- shares are eigenvalue / trace(C).
+
+Previously the axes were the principal axes of W alone. For axes 1–5 the two
+agree to |cos| ≥ 0.994. Shares rise slightly because C's eigenvalues include
+the uniquenesses' projection (q = 70: 6.82 / 4.83 / 4.10% → 6.99 / 4.88 /
+4.21%). Under the new sign rule, axis 4 of the q = 15 model flips, and its
+motion correlation now reads +0.26, not −0.26. Figures 3–6 were regenerated.
+Earlier sections keep the numbers they were written with.
+
+The bootstrap was run on the principal axes of W. Its intervals are
+sign-aligned to the reported axes and applied as offsets around the reported
+loadings, which is justified by the |cos| ≥ 0.994 agreement.
+
+**Principal angles** (methods plan, section 4): for each of the 1,000
+replicates, the angle between each leading axis and its best-matching
+replicate axis, and the largest principal angle between the axis 1–3
+subspaces.
+
+| | axis 1 | axis 2 | axis 3 | axis 4 | axis 5 | subspace 1–3 |
+|---|---|---|---|---|---|---|
+| median angle | 12.1° | 18.6° | 20.6° | 26.7° | 36.3° | 16.5° |
+| 95th percentile | 18.4° | 37.2° | 37.4° | 42.9° | 51.8° | 22.9° |
+
+Axes 1–3 are well determined individually and very well as a subspace. From
+axis 4 on, angles of 30–50° mean the directions are only loosely fixed. This
+is consistent with the split-half results (S19, S23).
 

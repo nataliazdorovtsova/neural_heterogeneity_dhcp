@@ -110,6 +110,25 @@ maximum of 0.79%), so this matters only for the smallest axes.
 
 **Action:** none needed for current claims.
 
+### I. LOW (found 2026-10-26) — Missing values coded as −999 and 0 in two covariates
+
+In `results/cohort/cohort.csv`, `birth_weight` (one −999) and
+`head_circumference_scan` (three −999 and 24 zeros) use sentinel codes.
+Neither variable had been used in any analysis. All variables that had been
+used (ages, sex, motion, density, radiology score) were checked and are clean.
+
+**Action (done):** `run_spec.clean_covariates` converts them to NaN on load.
+The frozen cohort file is unchanged.
+
+## Progress on the task list (2026-10-26)
+
+| task | status |
+|---|---|
+| 1. clustering normalisation | running (jobs 4323688–92); results in S32 |
+| 2. global weight scale | done, S29: axis 2 ≈ total edge weight (r = 0.89) |
+| 3. trajectories (question 2) | done, S30, figures 15–16 |
+| 4. axes from C, sign rule, principal angles | done, S31 (findings B and C resolved) |
+
 ## 3. Coverage against the methods plan
 
 | plan item | status |
