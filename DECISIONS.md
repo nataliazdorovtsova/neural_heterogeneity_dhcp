@@ -157,6 +157,18 @@ Edge weight = Σ SIFT2 streamline weights × participant-specific µ = relative
 fibre-bundle capacity. The proposal's Data section says "streamline-count
 matrices" and **must be corrected**.
 
+**2026-11-03, ab15 confirmed the weight scale.** Each infant's SIFT2-weighted
+connectome is multiplied by its own µ (`tcksift2 -out_mu`); the saved µ
+matrices equal raw × µ exactly. No further per-subject scaling (total weight,
+streamline count or brain volume) is applied; max normalisation appears only
+in QC display figures. Before µ, FODs were put on a common scale across
+infants: shared (Pietsch) response functions → `dwi2fod` → `mtnormalise` →
+sum of the two normalised WM FODs → tractography and SIFT2. No `dwinormalise`.
+This is the MRtrix-recommended setup for comparing FBC across subjects (Smith
+et al. 2022). So between-infant differences in total FBC are retained by
+design and are as comparable as current methods allow; the global-scale axis
+(S29) is not a processing artefact of the weights.
+
 ---
 
 ## D8. No additional motion exclusions — but motion is a reporting diagnostic
@@ -415,6 +427,13 @@ artefact.
     re-run the main pipeline on the scale-free features. The validation set
     has been used once already, so any re-scoring must be reported as a
     second look.
+
+  2026-11-03: ab15 confirmed the weights are cross-subject FBC with
+  `mtnormalise` and µ, no further scaling (D7). The user wants global
+  connectivity kept as a possible finding, not normalised away. Still to
+  decide: the clustering normaliser, and whether topology is also reported
+  separately from the global scale (density-matched binary, as in the lab's
+  dHCP precedent, or total-weight normalised).
 - **Audit of 2026-10-24** (`AUDIT.md`): axis 1 partly tracks each infant's
   maximum edge weight through the Onnela normalisation (r = −0.62 after age);
   test with a cohort-wide normaliser before axis 1 is interpreted. AUDIT.md
