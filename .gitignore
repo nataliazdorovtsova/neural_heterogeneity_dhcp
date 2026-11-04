@@ -4,9 +4,9 @@ __pycache__/
 env/
 .venv/
 
-# derived outputs — regenerate from scripts/
+# derived outputs — regenerate from scripts/. Figures are tracked (2026-11-04)
+# so they can be viewed on GitHub; results stay local.
 results/
-figures/
 
 # results/cohort/ (the frozen splits) is participant-level and stays local too;
 # its checksums are in DATA_PROVENANCE.md so any change is detectable.
