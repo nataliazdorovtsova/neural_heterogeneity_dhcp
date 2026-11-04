@@ -128,6 +128,7 @@ The frozen cohort file is unchanged.
 | 2. global weight scale | done, S29: axis 2 ≈ total edge weight (r = 0.89) |
 | 3. trajectories (question 2) | done, S30, figures 15–16 |
 | 4. axes from C, sign rule, principal angles | done, S31 (findings B and C resolved) |
+| feature definition (2026-11-04) | **decided, D18**: FBC weights kept, one clustering normaliser; core pipeline rerunning as run `d18` |
 
 ## 3. Coverage against the methods plan
 

@@ -28,7 +28,7 @@ MEASURE_LABEL = {"strength": "strength", "log_clustering": "clustering (log)",
 
 def load_primary():
     coh = pd.read_csv(paths.RESULTS / "cohort" / "cohort.csv")
-    d = np.load(paths.RESULTS / "features" / "perbin25_mst.npz")
+    d = np.load(paths.RESULTS / "features" / f"{paths.FEATURE_SET}.npz")
     m = coh.in_primary.values
     return coh[m].reset_index(drop=True), d["X"][m]
 

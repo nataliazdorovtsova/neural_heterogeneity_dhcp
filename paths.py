@@ -6,13 +6,27 @@ folder, so their reorganising cannot break this project and we cannot touch
 their files. See DATA_PROVENANCE.md for sources and checksums.
 """
 
+import os
 from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parent
 
 DATA = PROJECT / "data"
-RESULTS = PROJECT / "results"
-FIGURES = PROJECT / "figures"
+
+# --- analysis runs (DECISIONS.md D18) -----------------------------------------
+# Each run is the whole pipeline on one primary feature set. The original run
+# ("v1": Onnela clustering normalised by each infant's maximum weight) lives in
+# results/ and figures/. Any other run writes to results/<run>/ and
+# figures/<run>/, whose cohort/ and features/ are symlinks to the shared ones,
+# so a new run never overwrites an earlier one. Select with NH_RUN=<run>.
+RUNS = {"v1": "perbin25_mst",          # Onnela clustering, per-infant max normalisation
+        "d18": "perbin25_mst_cl"}      # clustering with one normaliser for every infant
+RUN = os.environ.get("NH_RUN", "v1")
+if RUN not in RUNS:
+    raise ValueError(f"NH_RUN={RUN!r}: expected one of {sorted(RUNS)}")
+FEATURE_SET = RUNS[RUN]
+RESULTS = PROJECT / "results" if RUN == "v1" else PROJECT / "results" / RUN
+FIGURES = PROJECT / "figures" if RUN == "v1" else PROJECT / "figures" / RUN
 
 # --- connectomes: AAL90 streamline-count (mu) stacks, shape (90, 90, 753) ----
 CONNECTOMES = DATA / "connectomes" / "perbin25_mst_n753"      # primary

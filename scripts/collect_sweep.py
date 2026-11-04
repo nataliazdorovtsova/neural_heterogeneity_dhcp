@@ -18,6 +18,7 @@ import pandas as pd
 
 import paths
 from features import standardise
+from scripts.run_spec import VARIANT
 
 PROV = paths.RESULTS / "provenance"
 
@@ -45,7 +46,7 @@ def main():
     for f in sorted(PROV.glob("K*_q*_M*.json")):
         d = json.loads(f.read_text())
         c, r = d["config"], d["results"]
-        if c.get("variant", "perbin25_mst") != "perbin25_mst":
+        if c.get("variant", "perbin25_mst") != VARIANT:
             continue                         # other feature sets are not part of selection
         rows.append(dict(
             K=c["K"], q=c["q"], clock=c["clock"], sharing=c["covariance_sharing"],

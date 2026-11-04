@@ -31,7 +31,7 @@ import paths
 import figstyle as fs
 from features import standardise
 from model import splines
-from scripts.run_spec import load
+from scripts.run_spec import load, VARIANT
 
 PERINFANT = paths.RESULTS / "perinfant"
 PROV = paths.RESULTS / "provenance"
@@ -60,7 +60,7 @@ def load_records():
     for f in sorted(PERINFANT.glob("K*_q*.npz")):
         d = json.loads((PROV / f"{f.stem}.json").read_text())
         c = d["config"]
-        if c.get("n_iter") != N_ITER or c.get("variant", "perbin25_mst") != "perbin25_mst":
+        if c.get("n_iter") != N_ITER or c.get("variant", "perbin25_mst") != VARIANT:
             continue                         # same budget, primary feature set only
         z = np.load(f)
         rows.append(dict(K=c["K"], q=c["q"], file=f.stem, converged=d["results"]["all_converged"],

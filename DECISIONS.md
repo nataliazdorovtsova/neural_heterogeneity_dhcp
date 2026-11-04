@@ -415,6 +415,55 @@ artefact.
 
 ---
 
+## D18. Primary features: FBC weights kept, one clustering normaliser for every infant
+
+*2026-11-04. Follows D7 (ab15's confirmation) and D17.*
+
+**Decision.** Option (a) of the open item on the global weight scale:
+- edge weights stay in FBC units (µ × SIFT2), with no per-infant rescaling;
+- clustering uses one normaliser for every infant instead of each infant's
+  maximum edge weight (feature set `perbin25_mst_cl`, the S32 variant). This
+  is Onnela clustering × max W, so the only change is that the per-infant
+  denominator is gone;
+- strength and communicability are unchanged (communicability is already
+  scale-free: it is degree-normalised before the matrix exponential);
+- global connectivity (total FBC) is treated as a possible finding, reported
+  with its age trajectory and its relation to head size, not normalised away.
+
+**Why.** The weights were built to be comparable across infants (shared
+response functions, `mtnormalise`, µ; D7), which is the MRtrix-recommended
+setup for cross-subject FBC. Dividing by each infant's strongest edge then
+adds noise from a single edge and produced the artefactual axis 1 (D17).
+Total-weight normalisation (Wu et al. 2023) was considered and not adopted,
+because it would remove global connectivity, which may be biology. The
+density-matched binary networks of the lab's dHCP precedent (Mousley et al.
+2025) remain an optional topology-only sensitivity check.
+
+**Consequences.**
+- Clustering now partly moves with overall connectivity, so the
+  global-connectivity axis may involve clustering as well as strength.
+- Clustering's age trajectory will be steeper: max W rises with PMA
+  (r = 0.78), and dividing by it had flattened part of the age increase.
+- Everything downstream of the features is rerun once (run `d18`, below).
+
+**The rerun.** `scripts/slurm/run_d18.sh` (jobs 4746832–4746855), same settings
+as the original run, normal QOS only. Outputs go to `results/d18/` and
+`figures/d18/` (selected with `NH_RUN=d18`, see `paths.py`), so the original
+run in `results/` and `figures/` is untouched.
+- CV: K = 1 at q = 0–70 and K = 2 at q = 0–25, 1000 sweeps, 20 starts. K ≥ 3
+  is not rerun: it lost at every q ≥ 5 in S15 and collapsed groups.
+- Selection: paired per-infant comparison, 1-SE rule (unchanged).
+- Final fits, 1,000 permutations (q = 15), 1,000 bootstrap replicates of the
+  selected model, split-half at q = 15 and 70, summaries and figures.
+- **The validation set is scored a second time.** It was scored once for the
+  original features (S17), and the feature change was prompted by results on
+  the training infants only. The result is reported as a second look, not as
+  an independent test; `validate_once.py` records this in its output.
+
+Estimated cost ≈ 2,400 core-hours, mostly the bootstrap (≈ 1,800 at q = 70).
+
+---
+
 ## Open — needs a decision or an answer
 - **How to handle the per-infant global weight scale** (S29, S32). Axis 2
   ≈ total edge weight (r = 0.89). Max normalisation of clustering creates
@@ -427,6 +476,8 @@ artefact.
     re-run the main pipeline on the scale-free features. The validation set
     has been used once already, so any re-scoring must be reported as a
     second look.
+
+  **Decided 2026-11-04: option (a), with one clustering normaliser (D18).**
 
   2026-11-03: ab15 confirmed the weights are cross-subject FBC with
   `mtnormalise` and µ, no further scaling (D7). The user wants global

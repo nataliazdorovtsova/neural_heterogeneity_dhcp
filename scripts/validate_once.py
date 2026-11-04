@@ -79,7 +79,13 @@ def main():
     null = -0.5 * (np.log(2 * np.pi) + Z ** 2).sum(1)
 
     n = len(coh)
-    out = dict(n=n, ages_outside_basis=n_clipped, null_total=float(null.sum()))
+    out = dict(n=n, ages_outside_basis=n_clipped, null_total=float(null.sum()),
+               run=paths.RUN, feature_set=VARIANT)
+    if paths.RUN != "v1":
+        # These infants were already scored once, for run v1 (SUPPLEMENT S17).
+        # Any later run is a second look at the same infants and is reported so.
+        out["second_look"] = ("validation infants previously scored for run v1; "
+                              "not an independent test of this run")
     for role, s in scores.items():
         d = s["lpd"] - null
         out[role] = dict(K=s["K"], q=s["q"], total=float(s["lpd"].sum()),
@@ -97,7 +103,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(out, indent=2))
     prov.snapshot(name="validation_score", config=dict(selection=sel["selected"],
-                  runner_up=sel["runner_up"], scored_once=True),
+                  runner_up=sel["runner_up"], scored_once=True, run=paths.RUN),
                   results=out, inputs=[paths.RESULTS / "selection.json",
                                        paths.RESULTS / "cohort" / "cohort.csv"])
     print(json.dumps(out, indent=2))

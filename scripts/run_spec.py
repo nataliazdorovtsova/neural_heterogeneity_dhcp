@@ -25,7 +25,7 @@ Q_GRID = (0, 1, 2, 5, 10, 15, 25)
 N_INIT = 20
 N_ITER = 250
 M = splines.M_DEFAULT
-VARIANT = "perbin25_mst"
+VARIANT = paths.FEATURE_SET     # the run's primary feature set (paths.py, DECISIONS.md D18)
 CLOCK = "pma"
 
 # Appended 2026-10-16 (indices 35-37): at K = 1 the held-out score was still
