@@ -43,11 +43,14 @@ UNITS = {"strength": "strength (edge-weight units)", "log_clustering": "log clus
          "communicability": "communicability"}
 LABEL = {"strength": "strength", "log_clustering": "clustering", "communicability": "communicability"}
 LOBE_COLOURS = dict(zip(atlas.LOBES, fs.COLOR_CYCLE[:6]))
+BANDS = True
 
 
 def bootstrap_betas():
     d = paths.RESULTS / "significance" / "bootstrap"
     files = sorted(glob.glob(str(d / "chunk*.npz"))) + sorted(glob.glob(str(d / "rep*.npz")))
+    if not files:
+        return None                       # bootstrap not run yet: curves without bands
     return np.concatenate([np.load(f)["beta"] for f in files])          # (n_boot, M, D)
 
 
@@ -55,6 +58,11 @@ def main():
     fit = np.load(paths.RESULTS / "final" / f"K1_q{Q}.npz")
     beta, mu, sd = fit["beta"][0], fit["mu"], fit["sd"]
     betas = bootstrap_betas()
+    global BANDS
+    BANDS = betas is not None
+    if not BANDS:
+        print("no bootstrap replicates yet: drawing point estimates without bands")
+        betas = beta[None]
     B = splines.basis(T)
     std = B @ beta                                                         # (T, D) SD units
     std_b = np.einsum("tm,bmd->btd", B, betas)                              # (n_boot, T, D)
@@ -64,7 +72,7 @@ def main():
         cols = np.arange(90) if mask is None else np.where(mask)[0]
         return a[..., 3 * cols + m].mean(-1)
 
-    summary = {"n_boot": len(betas), "q": Q, "measures": {}}
+    summary = {"n_boot": len(betas) if BANDS else 0, "q": Q, "measures": {}}
     i30, i42 = np.argmin(np.abs(T - 30)), np.argmin(np.abs(T - 42))
     for m, meas in enumerate(MEASURES):
         est = regional_mean(orig, m)
@@ -72,7 +80,7 @@ def main():
         ch = bt[:, i42] - bt[:, i30]
         summary["measures"][meas] = dict(
             at_30=float(est[i30]), at_42=float(est[i42]), change_30_42=float(est[i42] - est[i30]),
-            change_ci=[float(x) for x in np.percentile(ch, [2.5, 97.5])],
+            change_ci=[float(x) for x in np.percentile(ch, [2.5, 97.5])] if BANDS else None,
             change_sd_units=float(regional_mean(std, m)[i42] - regional_mean(std, m)[i30]))
     (paths.RESULTS / "trajectories.json").write_text(json.dumps(summary, indent=2))
     print(json.dumps(summary, indent=2))
@@ -108,8 +116,9 @@ def fig_curves(orig, orig_b, regional_mean):
     fig.legend(handles=[Patch(color=c, label=l) for l, c in LOBE_COLOURS.items()],
                loc="lower left", bbox_to_anchor=(0.06, 0.035), ncol=6, handlelength=1.2,
                columnspacing=1.0)
-    fig.text(0.06, 0.02, f"Mean trajectory of the selected model (K = 1, q = {Q}); shaded = "
-             "pointwise 95% bootstrap band (1,000 replicates).\nA–C: averaged over the 90 "
+    band = ("shaded = pointwise 95% bootstrap band (1,000 replicates)" if BANDS
+            else "bootstrap bands pending")
+    fig.text(0.06, 0.02, f"Mean trajectory of the selected model (K = 1, q = {Q}); {band}.\nA–C: averaged over the 90 "
              "regions, with each training infant's regional average in grey. D–F: averaged "
              "within lobes.", fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY, va="top")
     fs.save_figure(fig, paths.FIGURES / "fig15_trajectories")
@@ -149,9 +158,10 @@ def fig_maps(std, std_b):
                            "SD from the training mean over all ages")
     fig.suptitle("How each region develops", x=0.06, y=1.0, ha="left", fontsize=16,
                  fontweight="bold")
+    grey = ("Light grey = 95% bootstrap band\nincludes 0 at that age; dark grey" if BANDS
+            else "Bootstrap pending, so no region\nis greyed for uncertainty; dark grey")
     fig.text(0.06, -0.02, f"Selected model (K = 1, q = {Q}), left hemisphere, lateral and medial. "
-             "Light grey = 95% bootstrap band\nincludes 0 at that age; dark grey = tissue "
-             "outside the 90 AAL regions.", fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY,
+             f"{grey} = tissue outside the 90 AAL regions.", fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY,
              va="top")
     fs.save_figure(fig, paths.FIGURES / "fig16_trajectory_maps")
 

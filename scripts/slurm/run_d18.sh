@@ -53,3 +53,12 @@ jid --name d18_report --tasks 1 --cpus 4 --mem 16G --after "${VAL}:${PERM}:${BOO
   --cmd "$R python scripts/summarise_axes_significance.py && python scripts/summarise_bootstrap.py && python scripts/weight_scale_check.py && python scripts/characterise_tail.py && python scripts/make_figures.py && python scripts/make_axes_figures.py && python scripts/make_brain_figures.py && python scripts/make_trajectory_figures.py" >/dev/null
 
 echo "chain: cv $CV -> select $SEL -> final $FIN -> valid $VAL, perm $PERM, boot $BOOT, split $SPLIT -> report" >&2
+
+# Added 2026-11-04: early figures for a meeting, as soon as the final fits and
+# validation are done (job 4746834 / 4746851). No bootstrap or permutation
+# yet; the report job above redraws everything with intervals. Steps are
+# separated by ';' so one failure does not stop the others.
+#   bash scripts/slurm/submit.sh --name d18_prelim --tasks 1 --cpus 4 --mem 16G \
+#     --after 4746851 --cmd "export NH_RUN=d18; python scripts/weight_scale_check.py; \
+#     python scripts/make_figures.py; python scripts/make_axes_figures.py; \
+#     python scripts/make_brain_figures.py; python scripts/make_trajectory_figures.py"
