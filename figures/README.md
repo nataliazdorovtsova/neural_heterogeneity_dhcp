@@ -19,6 +19,14 @@ so:
 The rerun with one clustering normaliser for every infant (D18) writes its
 figures to `figures/d18/`, which will replace these as the main figures.
 
+**`figures/d18/`, 2026-11-05: preliminary.** Figures 1–7, 15 and 16 from the
+D18 run. Model selection, final fits and validation are complete. The
+bootstrap is still running: the brain maps carry no intervals yet, and the
+trajectory bands use the replicates finished so far (the caption gives the
+count). Figures 8 and 9 and the final versions follow when the bootstrap and
+split-half jobs finish. In this run, axis 1 is global connectivity (the
+original run's axis 2).
+
 | figure | shows | SUPPLEMENT |
 |---|---|---|
 | fig1_data_space | the data: measures, prematurity and density against age | — |

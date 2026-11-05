@@ -44,6 +44,7 @@ UNITS = {"strength": "strength (edge-weight units)", "log_clustering": "log clus
 LABEL = {"strength": "strength", "log_clustering": "clustering", "communicability": "communicability"}
 LOBE_COLOURS = dict(zip(atlas.LOBES, fs.COLOR_CYCLE[:6]))
 BANDS = True
+N_BOOT = 0
 
 
 def bootstrap_betas():
@@ -58,8 +59,9 @@ def main():
     fit = np.load(paths.RESULTS / "final" / f"K1_q{Q}.npz")
     beta, mu, sd = fit["beta"][0], fit["mu"], fit["sd"]
     betas = bootstrap_betas()
-    global BANDS
+    global BANDS, N_BOOT
     BANDS = betas is not None
+    N_BOOT = 0 if betas is None else len(betas)
     if not BANDS:
         print("no bootstrap replicates yet: drawing point estimates without bands")
         betas = beta[None]
@@ -116,7 +118,7 @@ def fig_curves(orig, orig_b, regional_mean):
     fig.legend(handles=[Patch(color=c, label=l) for l, c in LOBE_COLOURS.items()],
                loc="lower left", bbox_to_anchor=(0.06, 0.035), ncol=6, handlelength=1.2,
                columnspacing=1.0)
-    band = ("shaded = pointwise 95% bootstrap band (1,000 replicates)" if BANDS
+    band = (f"shaded = pointwise 95% bootstrap band ({N_BOOT:,} replicates)" if BANDS
             else "bootstrap bands pending")
     fig.text(0.06, 0.02, f"Mean trajectory of the selected model (K = 1, q = {Q}); {band}.\nA–C: averaged over the 90 "
              "regions, with each training infant's regional average in grey. D–F: averaged "
@@ -158,7 +160,7 @@ def fig_maps(std, std_b):
                            "SD from the training mean over all ages")
     fig.suptitle("How each region develops", x=0.06, y=1.0, ha="left", fontsize=16,
                  fontweight="bold")
-    grey = ("Light grey = 95% bootstrap band\nincludes 0 at that age; dark grey" if BANDS
+    grey = (f"Light grey = 95% bootstrap band ({N_BOOT:,} replicates)\nincludes 0 at that age; dark grey" if BANDS
             else "Bootstrap pending, so no region\nis greyed for uncertainty; dark grey")
     fig.text(0.06, -0.02, f"Selected model (K = 1, q = {Q}), left hemisphere, lateral and medial. "
              f"{grey} = tissue outside the 90 AAL regions.", fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY,
