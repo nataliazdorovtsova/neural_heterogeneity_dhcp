@@ -47,6 +47,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S30 | Developmental trajectories (research question 2) | strength doubles 30→42 weeks; cortical vs subcortical divergence |
 | S31 | Axes as eigenvectors of C; bootstrap principal angles | plan-compliant reporting; axes 1–3 stable within 12–21° |
 | S32 | Clustering without per-infant max normalisation | **axis 1 was an artefact of Onnela's normalisation**; axes 2–3 and K = 1 stand |
+| S33 | The D18 run: core pipeline with one clustering normaliser | K = 1, q = 70; axis 1 = global connectivity (r = 0.89 with total weight); clustering rises 1.47 SD from 30 to 42 weeks |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -82,6 +83,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Split-half replication at q = 70 | does the three-axis conclusion hold in the selected model? | axes 1–3: 0.91 / 0.80 / 0.73; tail replicates as blocks only | S23 |
 | Measure robustness to thresholding | which measures depend on preprocessing? | clustering 0.22; communicability 0.84; strength 0.92 | S24 |
 | Measure redundancy and communality | does communicability add information? | \|r\| = 0.77 with strength; 5% of its variance on axes 1–3 | S24 |
+| D18 rerun: CV, selection, validation (second look), 1,000 permutations, 1,000 bootstrap, split-half | do the conclusions hold with one clustering normaliser? | yes: K = 1, q = 70 (K = 1 from q = 10, z up to 15.5); all 15 axes p_fwe < 0.001; axes 1–3 replicate (0.94 / 0.79 / 0.76) | S33 |
 
 ---
 
@@ -960,6 +962,7 @@ Core-hours from SLURM accounting (CPUTimeRAW: wall time × allocated CPUs).
 | measure sets: features, CV, fits, split-half (S27) | 4303541–5 | 82 |
 | eigenvector set: K = 2 fit and inspection (S28b) | 4309285–6 | ≈ 2 |
 | eigenvector set: K = 1/2 CV at q = 35, 50, 70 (S28a) | 4309287–8 | 261 |
+| D18 run: CV, final fits, permutations, bootstrap, split-half, report (S33) | 4746832–55, 4746951, 4748765 | ≈ 2,840 |
 
 The bootstrap was costed in advance for q = 15. The selection then chose
 q = 70, which made each refit take about 28 minutes and the run about 4× the
@@ -1536,3 +1539,107 @@ Interpretation:
   before computing every measure, and to report that scale as a separate
   infant-level variable. This is open in DECISIONS.md.
 
+
+---
+
+## S33 The D18 run: the core pipeline with one clustering normaliser
+
+*2026-11-04 to 06. `scripts/slurm/run_d18.sh` (jobs 4746832–55; figures
+redrawn by 4746855). Run `d18`: results in `results/d18/`, figures in
+`figures/d18/`. Settles DECISIONS.md D18. The original run's numbers above
+are unchanged.*
+
+The whole core pipeline (S15–S25, S30, S31) was rerun with feature set
+`perbin25_mst_cl`, i.e. clustering = Onnela × max W, the same normaliser for
+every infant (S32). Strength, communicability, infants, folds and every
+fitting setting are unchanged. All fits converged: 17 CV specifications,
+5 final fits, 1,000 permutations, 1,000 bootstrap replicates, 20 split-half
+fits.
+
+**Selection (paired per-infant comparison, 1-SE rule).** K = 1, q = 70, gain
+113.8 per infant (original run 106.1). The best model is again at the largest
+q tested, so the q grid is not bracketed (D14 open). The runner-up is K = 2,
+q = 25.
+
+| q | 0 | 1 | 2 | 5 | 10 | 15 | 25 |
+|---|---|---|---|---|---|---|---|
+| K = 1 minus K = 2, per infant | −8.8 | −5.7 | −3.5 | −0.7 | +1.5 | +3.8 | +8.8 |
+| z | −13.7 | −6.8 | −8.7 | −2.1 | +3.8 | +9.5 | +15.5 |
+
+As in S16: two groups only win when the model has almost no axes to describe
+variation; from q = 10 on, one population with axes wins, and its lead grows
+with q.
+
+**Validation set (second look).** Gain 110.3 ± 8.7 per infant (CV 113.8). The
+selected model beats the runner-up by 3,239 ± 593 log units (z ≈ 5.5); 94 of
+101 infants favour it. These 101 infants were already scored for the original
+run (S17), and the feature change was motivated by results on training
+infants, so this is a consistency check, not an independent test.
+
+**Axes (q = 70, eigenvectors of C).**
+
+| axis | share (95% bootstrap) | strength / clustering / communicability | split-half \|cos\|, q = 15 / 70 | bootstrap angle, median (95th) |
+|---|---|---|---|---|
+| 1 | 7.8% (7.1–8.9) | 0.50 / 0.45 / 0.06 | 0.94 / 0.94 | 10.0° (13.3°) |
+| 2 | 4.4% (4.2–5.2) | 0.29 / 0.23 / 0.49 | 0.79 / 0.78 | 16.9° (27.5°) |
+| 3 | 3.5% (3.3–4.1) | 0.24 / 0.55 / 0.21 | 0.76 / 0.76 | 21.6° (33.8°) |
+| 4 | 2.7% (2.7–3.2) | | 0.58 / 0.52 | 29.8° (46.9°) |
+| 5 | 2.4% (2.4–2.8) | | 0.49 / 0.53 | 38.0° (52.1°) |
+
+Subspace 1–3: split-half overlap 0.73 (chance 0.01); largest principal angle
+to bootstrap replicates, median 19.3° (95th 29.2°). Of 270 loadings,
+174–231 per axis exclude zero (axes 1–8).
+
+- **Axis 1, global connectivity.** Strength and clustering together, almost
+  everywhere; the strongest loadings are clustering in the putamen, superior
+  temporal cortex, insula and thalamus. Infant scores correlate (age-adjusted)
+  with log total edge weight r = 0.89, log max edge weight 0.55, head
+  circumference 0.35 (n = 543), GA-adjusted birth weight 0.26 and network
+  density −0.46. It is the original run's axis 2 (S29, S32), now larger
+  because clustering carries the weight scale too. Whether it reflects
+  biology (brain size, maturity of white matter) or acquisition is open;
+  head circumference and birth weight say it is at least partly the former.
+- **Axis 2, orbitofrontal communicability and strength** (orbital
+  middle-frontal, both sides). Not related to total weight (r = 0.04).
+- **Axis 3, insula and superior temporal clustering with pallidum strength.**
+  Correlates with density r = −0.34.
+- Axes 1–3 replicate as well as or better than in the original run
+  (0.94 / 0.79 / 0.76 vs 0.91 / 0.81 / 0.74, q = 15). Beyond axis 3,
+  directions are loose, as before (S23).
+
+Caveat on bootstrap shares: for axes 4 and beyond, the estimate sits at or
+below the lower end of its percentile interval (also in S25). Refitting on
+data simulated from the model inflates small eigenvalues, so those intervals
+are biased upward and should not be quoted as confidence intervals. The
+intervals for axes 1–3 contain their estimates.
+
+**Permutation null (q = 15, 1,000).** All 15 axes beat the null,
+p_fwe < 0.001; the smallest (0.86%) exceeds the largest null axis (0.80%).
+
+**Axis tail (q = 70).** Same pattern as S23: later axes are increasingly
+local. Within-region coupling is 1.2× chance in axes 1–3, 4.3× in 4–8, 7.8×
+in 9–20 and 31× in 21–70.
+
+**Trajectories, 30 → 42 weeks PMA (average over 90 regions, 1,000
+replicates).**
+
+| measure | at 30 | at 42 | change (95% band) | SD units | original run (S30) |
+|---|---|---|---|---|---|
+| strength | 9.26 | 19.81 | +10.55 (10.15 to 10.97) | +2.17 | +2.19 |
+| log clustering | −2.03 | −1.40 | +0.64 (0.60 to 0.66) | **+1.47** | +0.06 |
+| communicability | 0.01636 | 0.01646 | +0.00010 (0.00005 to 0.00013) | +0.04 | +0.04 |
+
+- Clustering now rises in every lobe, steepest in temporal and occipital
+  cortex and least in subcortical regions. In the original run the
+  subcortical and limbic fall cancelled the cortical rise; that cancellation
+  partly came from dividing by each infant's maximum weight, which itself
+  rises with age (r = 0.78).
+- Caveat: with one normaliser, clustering scales with an infant's overall
+  weights, so part of its rise is the same weight growth seen in strength.
+  The lobe differences (e.g. subcortical strength and clustering both rising
+  least) are the more specific result.
+- Strength and communicability are as in S30: strength rises steeply in
+  cortex, least in subcortical regions; subcortical communicability falls.
+
+**Cost.** ≈ 2,840 core-hours (estimate ≈ 2,400): bootstrap 2,157, CV 339,
+permutations 242, split-half 68, final fits 30. All on normal QOS, ≤ 128 CPUs.
