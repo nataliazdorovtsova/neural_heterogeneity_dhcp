@@ -464,6 +464,69 @@ Estimated cost ≈ 2,400 core-hours, mostly the bootstrap (≈ 1,800 at q = 70).
 
 ---
 
+## D19. Reframed design: binarised networks, one measure, lobe features (run `bin10`)
+
+*2026-11-11. After the supervisor meeting (Duncan); plan in
+`RESEARCH_PLAN_BIN10.md` (local only). Pilot: `scripts/build_bin10.py`,
+`scripts/pilot_bin10.py`, `scripts/check_bin10_frontal.py` (jobs 4764211–15).*
+
+**Decision.**
+- **Networks:** binarised at a fixed density for every infant, from the
+  unthresholded µ-weighted stack: the maximum-weight spanning tree (89 edges,
+  so no region is disconnected), then the strongest remaining edges.
+- **Density:** each region's value is averaged over 8, 9, 10, 11 and 12%
+  (320–481 of 4,005 edges), centred on 10% (cost integration; Ginestet et
+  al. 2011).
+- **One measure: communicability** (degree-normalised, mean off-diagonal;
+  D5), computed per region on the full 90-region network. It is read as the
+  ease of communication by diffusion along all routes, short routes counting
+  most (Estrada & Hatano 2008).
+- **Lobe features:** the mean of each lobe × hemisphere group's regions,
+  giving 12 features (feature set `bin10_comm_avg_lobe`). The model, the
+  selection rule and the PRS/outcome plans are unchanged; figures show lobes,
+  not nodes.
+
+**Why.**
+- In weighted networks, total connection weight dominates every measure
+  (D18 axis 1, r = 0.89 with total weight). A fixed edge count removes it by
+  construction: in the pilot, the mean change from 30 to 42 weeks is
+  +0.08 SD of the spread, against 2.2 SD for weighted strength.
+- This also resolves D4 (density confounded with age), without waiting for
+  a rebuild.
+- Communicability was preferred over between-lobe share (the other pilot
+  candidate) for two reasons:
+  - between-lobe share depends on lobe size (more possible within-lobe
+    partners in a big lobe), so lobe levels are not comparable;
+  - communicability has a mechanistic reading (diffusion).
+  On the pilot criteria the two were close.
+- Averaging over densities: at a single density, an infant's lobe values at
+  8% or 12% agree only moderately with 10% (r = 0.48–0.78). The lobe pattern
+  of the age change is more stable (r = 0.81, 0.86).
+
+**Pilot facts (569 training infants).**
+- Artefact links are small: |r| ≤ 0.15 with motion and with pre-threshold
+  density, age-adjusted.
+- The spread is not one global component (first PC 17% at 10%).
+- Younger infants' networks are less like the consensus (r = 0.57 with PMA),
+  so part of the early change may be noise in the youngest, mostly preterm,
+  networks.
+
+**Frontal skew (check, averaged features).** Frontal communicability is
+left-skewed (−2.6 L, −2.3 R). This comes from 7 infants (1.2%) with
+residual z < −3, down to −9.8. Without them, the skew is −0.2 / −0.3; a log
+makes it worse (−2.8).
+- The low values sit in orbitofrontal regions (gyrus rectus, orbital
+  superior and middle frontal): in these infants, those regions keep only
+  2–3 edges instead of 6–9.
+- 6 of the 7 are preterm-born, scanned early (median PMA 34 vs 41 weeks),
+  with more motion (median 2.7 vs 1.6) and higher radiology scores (median 3
+  vs 2).
+- Orbitofrontal cortex is prone to susceptibility signal loss in diffusion
+  MRI. So these values most likely reflect acquisition (dropout, motion),
+  not development. How to handle them is open (below).
+
+---
+
 ## Open — needs a decision or an answer
 - **How to handle the per-infant global weight scale** (S29, S32). Axis 2
   ≈ total edge weight (r = 0.89). Max normalisation of clustering creates
@@ -512,7 +575,14 @@ Estimated cost ≈ 2,400 core-hours, mostly the bootstrap (≈ 1,800 at q = 70).
   < 1 log unit per infant). The leading axes do not depend on this choice.
 - **BCa intervals for axis sizes** (S20): percentile intervals are biased
   upward for axes ≥ 5. Needed only if those sizes are reported.
-- **Fixed-density rebuild** (D4) — asked, awaiting ab15.
+- **Orbitofrontal low-communicability infants** (D19): 7 training infants
+  with frontal residual z < −3. Keep them (consistent with D8) with a
+  without-them check at each step, or exclude them by a stated rule?
+  **Decided 2026-11-11: keep them; every step is repeated without them**
+  (run `bin10_no7`, `results/bin10_no7/excluded_infants.csv`). If an axis is
+  driven by them, it is reported as an orbitofrontal dropout artefact.
+- ~~**Fixed-density rebuild** (D4) — asked, awaiting ab15.~~ Superseded by D19:
+  fixed-density networks built here from the unthresholded stack.
 - **Sign-off on D10** (log on clustering rather than communicability).
 - ~~**Knot span**~~ — resolved: 26.5–45.5 (SUPPLEMENT S8, `model/splines.py`).
 - ~~**Basis size M**~~ — resolved: M = 20 (SUPPLEMENT S8).
