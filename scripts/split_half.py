@@ -75,11 +75,12 @@ def main():
 
     rng = np.random.default_rng(SEED + a.split)
     in_a = halves(coh, rng)
-    L, conv = {}, {}
+    L, conv, psi, W = {}, {}, {}, {}
     for name, m in (("A", in_a), ("B", ~in_a)):
         p, tr, conv[name], _ = fit_best(X[m], B[m], 1, a.q, n_init=a.n_init,
                                         seed_base=SEED + 100 * a.split + (name == "B") * 50)
         L[name], *_ = principal(p.W[0], p.psi[0])
+        psi[name], W[name] = np.asarray(p.psi[0]), np.asarray(p.W[0])
 
     ia, cos_full_a = match(L_full, L["A"], a.n_match)
     ib, cos_full_b = match(L_full, L["B"], a.n_match)
@@ -90,7 +91,8 @@ def main():
     # LA_all / LB_all: every axis of each half in its own size order, for
     # subspace comparisons of blocks beyond the matched axes.
     np.savez(out_dir / f"split{a.split}.npz", LA=LA, LB=LB, LA_all=L["A"], LB_all=L["B"],
-             cos_ab=cos_ab, cos_full_a=cos_full_a,
+             W_A=W["A"], W_B=W["B"], psi_A=psi["A"], psi_B=psi["B"],
+             in_a=in_a, cos_ab=cos_ab, cos_full_a=cos_full_a,
              cos_full_b=cos_full_b, n_a=int(in_a.sum()), n_b=int((~in_a).sum()),
              converged=np.array([conv["A"], conv["B"]]))
     print(f"split {a.split}: halves {in_a.sum()}/{(~in_a).sum()}, converged {conv}, "

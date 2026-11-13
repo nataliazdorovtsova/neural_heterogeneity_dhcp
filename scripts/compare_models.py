@@ -36,10 +36,9 @@ from scripts.run_spec import load, VARIANT
 PERINFANT = paths.RESULTS / "perinfant"
 PROV = paths.RESULTS / "provenance"
 N_ITER = 1000
-D = 270
 
 
-def n_params(K, q, M=splines.M_DEFAULT):
+def n_params(K, q, D, M=splines.M_DEFAULT):
     """Free parameters: trajectories, loadings (less rotation), uniquenesses, weights."""
     return K * (M * D + D * q - q * (q - 1) // 2 + D) + (K - 1)
 
@@ -85,7 +84,8 @@ def main():
 
     df["total"] = [l.sum() for l in df.lpd]
     df["gain_per_infant"] = [(l - base.reindex(l.index)).mean() for l in df.lpd]
-    df["n_params"] = [n_params(K, q) for K, q in zip(df.K, df.q)]
+    D = load()[1].shape[1]                       # 270 for v1/d18, 12 for bin10
+    df["n_params"] = [n_params(K, q, D) for K, q in zip(df.K, df.q)]
     best = df.loc[df.total.idxmax()]
     diffs = [paired(best.lpd, l) for l in df.lpd]
     df["diff_to_best"] = [d for d, _ in diffs]
@@ -173,7 +173,8 @@ def fig_comparison(df, kk, sel, n):
              "= 1 SE of the difference to the best model. B: error bars = 95% interval.\n"
              "Selection rule: fewest parameters within 1 SE of the best.",
              fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY, va="top")
-    return fs.save_figure(fig, paths.FIGURES / "fig7_model_comparison")
+    name = "b5_model_selection" if paths.RUN.startswith("bin10") else "fig7_model_comparison"
+    return fs.save_figure(fig, paths.FIGURES / name)
 
 
 if __name__ == "__main__":

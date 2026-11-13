@@ -26,7 +26,7 @@ PROV = paths.RESULTS / "provenance"
 def baseline_lpd():
     """Held-out log density of the null model, summed over the CV folds.
 
-    The null model treats each of the 270 coordinates as an independent normal
+    The null model treats each coordinate (270, or 12 for bin10) as an independent normal
     with the fit fold's mean and SD: no age, no groups, no axes. It uses the same
     infants, folds and standardisation as run_spec, so (spec - baseline) / n is
     the gain per held-out infant that the model's structure buys.
@@ -38,7 +38,7 @@ def baseline_lpd():
     for f in np.unique(folds):
         _, Zo, *_ = standardise(X[folds != f], X[folds == f])
         total += float(-0.5 * (np.log(2 * np.pi) + Zo ** 2).sum())
-    return total, len(coh)
+    return total, len(coh), X.shape[1]
 
 
 def main():
@@ -66,12 +66,12 @@ def main():
             .sort_values("file")
             .drop_duplicates(subset=["K", "q", "clock", "sharing"], keep="last")
             .sort_values(["K", "q"]).reset_index(drop=True))
-    base, n = baseline_lpd()
+    base, n, D = baseline_lpd()
     assert (df.n_heldout == n).all(), "spec and baseline scored different infants"
     df["baseline_lpd"] = base
     df["gain_per_infant"] = (df.heldout_lpd - base) / n
     print(f"null baseline: {base:,.1f} over {n} held-out infants "
-          f"({base / n:.1f} per infant, {base / n / 270:.3f} per coordinate)")
+          f"({base / n:.1f} per infant, {base / n / D:.3f} per coordinate)")
     df.to_csv(paths.RESULTS / "sweep_summary.csv", index=False)
     print(f"{len(df)} specifications\n")
 

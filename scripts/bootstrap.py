@@ -76,7 +76,7 @@ def main():
     L_hat, S2_hat, _, _ = principal(p_hat.W[0], p_hat.psi[0])
     p_hat = mfa.Params(*(np.asarray(x) for x in p_hat))
 
-    loadings, S2, beta, conv, secs = [], [], [], [], []
+    loadings, S2, beta, conv, secs, psis, Ws = [], [], [], [], [], [], []
     for i in range(a.n_boot):
         t0 = time.time()
         b = a.chunk * a.n_boot + i
@@ -93,17 +93,20 @@ def main():
         if a.per_replicate:
             out_dir.mkdir(parents=True, exist_ok=True)
             np.savez(rep_file, q=q, loadings=aligned[None], S2=s2[None],
-                     beta=np.asarray(p.beta[0])[None], converged=np.array([c]),
+                     beta=np.asarray(p.beta[0])[None], psi=np.asarray(p.psi[0])[None],
+                     W=W[None], converged=np.array([c]),
                      seconds=np.array([secs_b]), first_boot=b, n_random=a.n_random)
             continue
         loadings.append(aligned); S2.append(s2); beta.append(np.asarray(p.beta[0]))
+        psis.append(np.asarray(p.psi[0])); Ws.append(W)
         conv.append(c); secs.append(secs_b)
 
     if a.per_replicate:
         return
     out_dir.mkdir(parents=True, exist_ok=True)
     np.savez(out_dir / f"chunk{a.chunk}.npz", q=q, loadings=np.array(loadings), S2=np.array(S2),
-             beta=np.array(beta), converged=np.array(conv), seconds=np.array(secs),
+             beta=np.array(beta), psi=np.array(psis), W=np.array(Ws),
+             converged=np.array(conv), seconds=np.array(secs),
              first_boot=a.chunk * a.n_boot)
 
 

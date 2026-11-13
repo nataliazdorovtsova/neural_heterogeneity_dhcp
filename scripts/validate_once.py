@@ -82,10 +82,12 @@ def main():
     out = dict(n=n, ages_outside_basis=n_clipped, null_total=float(null.sum()),
                run=paths.RUN, feature_set=VARIANT)
     if paths.RUN != "v1":
-        # These infants were already scored once, for run v1 (SUPPLEMENT S17).
-        # Any later run is a second look at the same infants and is reported so.
-        out["second_look"] = ("validation infants previously scored for run v1; "
-                              "not an independent test of this run")
+        # These infants were already scored for every earlier run (v1: S17; d18:
+        # S33). Any later run is a repeat look at the same infants, reported so.
+        runs = list(paths.RUNS)
+        earlier = [r for r in runs[:runs.index(paths.RUN)] if not r.endswith("_no7")]
+        out["second_look"] = (f"validation infants previously scored for run(s) "
+                              f"{', '.join(earlier)}; not an independent test of this run")
     for role, s in scores.items():
         d = s["lpd"] - null
         out[role] = dict(K=s["K"], q=s["q"], total=float(s["lpd"].sum()),

@@ -20,13 +20,19 @@ DATA = PROJECT / "data"
 # figures/<run>/, whose cohort/ and features/ are symlinks to the shared ones,
 # so a new run never overwrites an earlier one. Select with NH_RUN=<run>.
 RUNS = {"v1": "perbin25_mst",          # Onnela clustering, per-infant max normalisation
-        "d18": "perbin25_mst_cl"}      # clustering with one normaliser for every infant
+        "d18": "perbin25_mst_cl",      # clustering with one normaliser for every infant
+        "bin10": "bin10_comm_avg_lobe",       # D19: binarised, communicability, 12 lobes
+        "bin10_no7": "bin10_comm_avg_lobe"}   # D19 check: without the 7 orbitofrontal-low infants
 RUN = os.environ.get("NH_RUN", "v1")
 if RUN not in RUNS:
     raise ValueError(f"NH_RUN={RUN!r}: expected one of {sorted(RUNS)}")
 FEATURE_SET = RUNS[RUN]
 RESULTS = PROJECT / "results" if RUN == "v1" else PROJECT / "results" / RUN
 FIGURES = PROJECT / "figures" if RUN == "v1" else PROJECT / "figures" / RUN
+# A run may drop named infants (a sensitivity check): results/<run>/excluded_infants.csv
+# with a dhcp_id column. scripts/run_spec.load() applies it, so every model fit,
+# selection and baseline in that run sees the same infants.
+EXCLUDE = RESULTS / "excluded_infants.csv"
 
 # --- connectomes: AAL90 streamline-count (mu) stacks, shape (90, 90, 753) ----
 CONNECTOMES = DATA / "connectomes" / "perbin25_mst_n753"      # primary

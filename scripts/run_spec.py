@@ -68,6 +68,9 @@ def load(variant=VARIANT):
     feat = np.load(paths.RESULTS / "features" / f"{variant}.npz")
     X = feat["X"].reshape(len(feat["X"]), -1)           # (n, 270)
     prim = coh.in_primary.values & (coh.split == "train").values
+    if paths.EXCLUDE.exists():                       # sensitivity runs only (paths.py)
+        drop = set(pd.read_csv(paths.EXCLUDE).dhcp_id.astype(str))
+        prim &= ~coh.dhcp_id.astype(str).isin(drop).values
     return coh[prim].reset_index(drop=True), X[prim]
 
 

@@ -37,29 +37,33 @@ def main():
     ap.add_argument("--chunk", type=int, required=True)
     ap.add_argument("--n-perm", type=int, default=10)
     ap.add_argument("--n-init", type=int, default=5)
+    ap.add_argument("--q", type=int, default=Q, help=f"axes in the null fits (default {Q})")
     a = ap.parse_args()
 
     coh, Xraw = load()
     X, *_ = standardise(Xraw)
     B = splines.basis(age_for(coh, CLOCK))
-    full = np.load(paths.RESULTS / "final" / f"K1_q{Q}.npz")
+    full = np.load(paths.RESULTS / "final" / f"K1_q{a.q}.npz")
     mean = B @ full["beta"][0]                       # the fitted age trajectory
     resid = X - mean
 
-    var, conv, secs = [], [], []
+    var, ev_c, conv, secs = [], [], [], []
     for i in range(a.n_perm):
         t0 = time.time()
         perm = a.chunk * a.n_perm + i
         rng = np.random.default_rng(SEED + perm)
         X0 = mean + rng.permuted(resid, axis=0)      # each column shuffled on its own
-        p, tr, c, _ = fit_best(X0, B, 1, Q, n_init=a.n_init, seed_base=SEED * 10 + 100 * perm)
+        p, tr, c, _ = fit_best(X0, B, 1, a.q, n_init=a.n_init, seed_base=SEED * 10 + 100 * perm)
         _, S2, _, _ = principal(p.W[0], p.psi[0])
-        var.append(S2); conv.append(c); secs.append(time.time() - t0)
+        W0, psi0 = np.asarray(p.W[0]), np.asarray(p.psi[0])
+        ev = np.linalg.eigvalsh(W0 @ W0.T + np.diag(psi0))[::-1]   # eigenvalues of C, largest first
+        var.append(S2); ev_c.append(ev); conv.append(c); secs.append(time.time() - t0)
         print(f"perm {perm}: largest null axis variance {S2[0]:.2f}, converged={c}, "
               f"{secs[-1]:.0f}s", flush=True)
 
     OUT.mkdir(parents=True, exist_ok=True)
-    np.savez(OUT / f"chunk{a.chunk}.npz", var=np.array(var), converged=np.array(conv),
+    np.savez(OUT / f"chunk{a.chunk}.npz", var=np.array(var), ev_c=np.array(ev_c), q=a.q,
+             converged=np.array(conv),
              seconds=np.array(secs), first_perm=a.chunk * a.n_perm)
 
 
