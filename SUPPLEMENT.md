@@ -48,6 +48,8 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S31 | Axes as eigenvectors of C; bootstrap principal angles | plan-compliant reporting; axes 1–3 stable within 12–21° |
 | S32 | Clustering without per-infant max normalisation | **axis 1 was an artefact of Onnela's normalisation**; axes 2–3 and K = 1 stand |
 | S33 | The D18 run: core pipeline with one clustering normaliser | K = 1, q = 70; axis 1 = global connectivity (r = 0.89 with total weight); clustering rises 1.47 SD from 30 to 42 weeks |
+| S34 | Binarised networks (bin10): pilot of two measures; frontal low infants | communicability averaged over 8–12% (D19); 7 orbitofrontal-low infants kept, with a without-them check |
+| S35 | Model selection on 12 lobe features | K = 1, q = 5 (q = 6 without the 7); the two-group winner's small group = poor-quality frontal networks |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -1643,3 +1645,93 @@ replicates).**
 
 **Cost.** ≈ 2,840 core-hours (estimate ≈ 2,400): bootstrap 2,157, CV 339,
 permutations 242, split-half 68, final fits 30. All on normal QOS, ≤ 128 CPUs.
+
+---
+
+## S34 Binarised networks: pilot of two measures, and the frontal low infants
+
+*2026-11-11. `scripts/build_bin10.py`, `scripts/pilot_bin10.py`,
+`scripts/check_bin10_frontal.py` (jobs 4764211–15). Figures
+`figures/bin10/b1–b4b`. Training infants only; no PRS or outcomes read.
+Settles DECISIONS D19.*
+
+**Networks.** Each session: the maximum-weight spanning tree of the
+unthresholded network, then the strongest remaining edges, to 320–481 edges
+(8–12% of 4,005; 10% = 400). The tree is verified against networkx; every
+network is binary, symmetric, connected and has the exact edge count.
+- 949 of 4,005 edges are kept in at least one infant, 80 in every infant,
+  386 in half or more.
+- Younger infants' networks are less like the consensus (the 400 most
+  common edges): r = 0.57 with PMA. Their weakest kept edges are weaker
+  (Spearman r = 0.54).
+
+**Candidate measures** (12 lobe × hemisphere features at 10%; criteria fixed
+in advance):
+
+| criterion | communicability | between-lobe share |
+|---|---|---|
+| mean change 30→42 weeks, SDs of the spread | +0.08 | −0.51 |
+| SD of that change across lobes | 0.68 | 0.87 |
+| per-infant r with 8% / 12% values, by lobe | 0.48–0.78 | 0.43–0.78 |
+| r of the lobe pattern of change with 8% / 12% | 0.81 / 0.86 | 0.90 / 0.80 |
+| largest age-adjusted \|r\| with motion or pre-threshold density | 0.15 | 0.15 |
+| first principal component of the spread | 17% | 15% |
+
+Communicability was chosen (D19): between-lobe share depends on lobe size,
+and communicability reads as diffusion. Because per-infant values depend on
+the exact density, each region's value is averaged over 8–12% before lobe
+averaging.
+
+**Frontal low infants** (averaged features). Frontal communicability is
+skewed (−2.6 L, −2.3 R) because of 7 infants with residual z < −3 (to −9.8).
+Without them the skew is −0.2 / −0.3; a log makes it worse.
+- The low values are in orbitofrontal regions (rectus, orbital superior and
+  middle frontal), which keep 2–3 edges instead of 6–9.
+- 6 of the 7 are preterm-born and scanned early (median PMA 34 vs 41), with
+  more motion (2.7 vs 1.6) and higher radiology scores (3 vs 2): most likely
+  susceptibility dropout and motion.
+- Decision (D19): keep them; repeat every step without them (run
+  `bin10_no7`).
+
+---
+
+## S35 Model selection on the 12 lobe features (bin10)
+
+*2026-11-11. `scripts/slurm/run_bin10_step2.sh` (jobs 4764216–35), q = 7
+added (4764254, 4764256), reselection (4764258–61),
+`scripts/check_bin10_groups.py` (4764253). Figures `b5_model_selection`,
+`b5b_k_both`.*
+
+Same procedure as S16:
+- K = 1 and 2 at q = 0–7 (q ≤ 7 is identifiable at D = 12);
+- 1000 sweeps, 20 starts, the frozen folds;
+- paired per-infant comparison and the 1-SE rule.
+Every fit converged except K = 2 at q = 1 (bin10) and q = 4 (bin10_no7).
+
+| | all 569 training infants | without the 7 (562) |
+|---|---|---|
+| best model | K = 2, q = 4 (gain 1.25 per infant) | K = 1, q = 6 (1.23) |
+| selected (1-SE rule) | **K = 1, q = 5** (1.12) | **K = 1, q = 6** |
+| one minus two groups, z at q = 0 / 1 / 2 / 3 / 4 / 5 / 6 / 7 | −4.0 / −4.2 / −1.3 / −1.8 / −2.0 / −0.7 / +1.2 / +1.6 | −3.6 / −2.5 / −0.5 / +0.6 / −0.8 / +1.1 / +2.2 / +2.9 |
+
+**The two-group model's second group is not a subtype.** In the full-training
+K = 2, q = 4 fit, it holds 24 infants (4.2%; mean responsibility 0.97). It
+includes all 7 orbitofrontal-low infants. Its members have:
+- frontal communicability 2.1 SD below the curve, with other lobes near 0;
+- a younger scan age (median PMA 34.8 vs 40.6 weeks);
+- more preterm-born infants (75% vs 27%) and more motion (2.4 vs 1.5).
+Without the 7, two groups lose from q = 6 on (z = 2.2, 2.9). So the second
+group absorbs poor-quality frontal networks.
+
+**Validation (bin10, third look at these 101 infants; v1 and d18 before):**
+- selected K = 1, q = 5: gain 0.85 ± 0.17 per infant (CV 1.12);
+- K = 2, q = 4: gain 0.77 ± 0.27;
+- difference: 8 ± 16 log units in total, so the two predict equally well on
+  new infants.
+
+**Size of the structure.** The gains are small. Over a null of 12 independent
+features, the age curves alone add 0.26 log units per infant, and 5 axes add
+about 0.9 more. With a fixed edge count, communicability changes little with
+age. Most of the structure is in how lobes vary together.
+
+Compute: ≈ 3 core-hours for steps 1–2.

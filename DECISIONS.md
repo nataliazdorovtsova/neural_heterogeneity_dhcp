@@ -527,6 +527,39 @@ makes it worse (−2.8).
 
 ---
 
+## D20. The 7 orbitofrontal low-communicability infants are excluded
+
+*2026-11-13. Natalia, after step 3 (SUPPLEMENT S36). Supersedes the
+"keep them" choice of 2026-11-11 (D19).*
+
+**Decision.** The 7 training infants with frontal communicability residual
+z < −3 (D19) are excluded from the binarised analysis. Run `bin10_no7`
+(562 training infants, selected q = 6) is now the **primary** result;
+`bin10` (all 569) is kept as the sensitivity check. Steps 4–6 use
+`bin10_no7`. The excluded infants are listed in
+`results/bin10_no7/excluded_infants.csv` (local).
+
+**Why.** The reason is data quality, not the results:
+- the low values sit in orbitofrontal regions, which are prone to
+  susceptibility signal loss; 6 of the 7 are preterm-born, scanned early,
+  with more motion (D19);
+- they make the frontal features skewed (−2.6 / −2.3; −0.2 / −0.3 without
+  them) and form most of the small second group of the bin10 two-group
+  model (step 2, S35).
+
+**What does not change.** Step 3 is the same with or without them:
+- the three axes above noise are the same patterns (|cos| 0.99, 1.00, 0.98
+  between runs; principal angles 3°, 5°, 12°), each with permutation
+  p = 0.001 (corrected) in both runs;
+- the 30→42-week changes per lobe agree (r = 0.997 across the 12 lobes).
+
+Without the 7, axes 1 and 2 are almost the same size (17.6% and 16.1%), so
+they can swap between split halves; the three-axis set is stable (bootstrap
+median angle 16°). Axes 1–3 are reported as a set, and their order is not
+interpreted.
+
+---
+
 ## Open — needs a decision or an answer
 - **How to handle the per-infant global weight scale** (S29, S32). Axis 2
   ≈ total edge weight (r = 0.89). Max normalisation of clustering creates
@@ -575,7 +608,8 @@ makes it worse (−2.8).
   < 1 log unit per infant). The leading axes do not depend on this choice.
 - **BCa intervals for axis sizes** (S20): percentile intervals are biased
   upward for axes ≥ 5. Needed only if those sizes are reported.
-- **Orbitofrontal low-communicability infants** (D19): 7 training infants
+- ~~**Orbitofrontal low-communicability infants**~~ — resolved 2026-11-13
+  by D20: excluded; `bin10_no7` is primary. Earlier entry: 7 training infants
   with frontal residual z < −3. Keep them (consistent with D8) with a
   without-them check at each step, or exclude them by a stated rule?
   **Decided 2026-11-11: keep them; every step is repeated without them**
