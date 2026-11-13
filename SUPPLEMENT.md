@@ -50,6 +50,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S33 | The D18 run: core pipeline with one clustering normaliser | K = 1, q = 70; axis 1 = global connectivity (r = 0.89 with total weight); clustering rises 1.47 SD from 30 to 42 weeks |
 | S34 | Binarised networks (bin10): pilot of two measures; frontal low infants | communicability averaged over 8–12% (D19); 7 orbitofrontal-low infants kept, with a without-them check |
 | S35 | Model selection on 12 lobe features | K = 1, q = 5 (q = 6 without the 7); the two-group winner's small group = poor-quality frontal networks |
+| S36 | Trajectories and the spread around them (bin10_no7 primary, D20) | frontal L rises, temporal and parietal fall (relative to other lobes); age explains 1–16% per lobe; three axes above noise (frontal vs limbic, subcortical vs limbic L, parietal vs occipital/limbic), the same with or without the 7 |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -86,6 +87,9 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Measure robustness to thresholding | which measures depend on preprocessing? | clustering 0.22; communicability 0.84; strength 0.92 | S24 |
 | Measure redundancy and communality | does communicability add information? | \|r\| = 0.77 with strength; 5% of its variance on axes 1–3 | S24 |
 | D18 rerun: CV, selection, validation (second look), 1,000 permutations, 1,000 bootstrap, split-half | do the conclusions hold with one clustering normaliser? | yes: K = 1, q = 70 (K = 1 from q = 10, z up to 15.5); all 15 axes p_fwe < 0.001; axes 1–3 replicate (0.94 / 0.79 / 0.76) | S33 |
+| bin10 step 3: 1,000 permutations, 1,000 bootstrap, 10 split-halves (both runs) | how many axes of the lobe spread are real? | three (p_fwe = 0.001 each); axes 4+ at chance (p_fwe ≥ 0.86) | S36 |
+| bin10 vs bin10_no7 axes and trajectories | do the 7 orbitofrontal-low infants drive step 3? | no: axes 1–3 \|cos\| 0.99 / 1.00 / 0.98; 30→42 changes r = 0.997 | S36 |
+| Spread vs PMA (Brown-Forsythe, 4 bins, Bonferroni) | is the spread constant with age, as the model assumes? | no for frontal L/R, limbic R and axis 1: SD 1.4–1.5× larger below 35 weeks; preterm = term at ≥ 38 weeks | S36 |
 
 ---
 
@@ -1735,3 +1739,93 @@ about 0.9 more. With a fixed edge count, communicability changes little with
 age. Most of the structure is in how lobes vary together.
 
 Compute: ≈ 3 core-hours for steps 1–2.
+
+---
+
+## S36 Trajectories and the spread around them (bin10 step 3)
+
+*2026-11-13. `scripts/slurm/run_bin10_step3.sh`: bootstrap, permutations
+and split-halves (jobs 4764266–81, 11 Nov), `scripts/summarise_bin10_step3.py`
+(figures rebuilt in 4774730–31). Figures `b6_trajectories`,
+`b6b_trajectories_standardised`, `b7_spread`, `b8_axes` (axes above noise,
+with brain views), `b8b_all_axes`, `b9_axis_significance`. Numbers:
+`results/<run>/step3_summary.json`.*
+
+**Primary run `bin10_no7`** (D20: 562 training infants, K = 1, q = 6);
+`bin10` (569, q = 5) is the check. Every one of the 1,000 bootstrap and
+1,000 permutation fits converged in both runs.
+
+**Trajectories (mean curve, 30 → 42 weeks, in SDs of the spread, 95%
+bootstrap interval).** With a fixed edge count, communicability is shared
+between lobes, so the changes are relative: a lobe that rises gains a larger
+share of the network's diffusion.
+
+| lobe | left | right |
+|---|---|---|
+| frontal | **+1.49** (1.03 to 1.64) | +0.23 (−0.18 to 0.42) |
+| parietal | **−0.82** (−1.13 to −0.51) | **−0.72** (−1.05 to −0.44) |
+| temporal | **−0.62** (−0.92 to −0.35) | **−1.19** (−1.54 to −0.96) |
+| occipital | **+0.71** (0.43 to 0.99) | **−0.39** (−0.71 to −0.15) |
+| limbic | −0.07 (−0.27 to 0.31) | **+0.71** (0.45 to 1.04) |
+| subcortical | +0.49 (−0.03 to 0.58) | +0.25 (−0.10 to 0.47) |
+
+- Age explains little of each lobe's variance: 1 − (spread SD / total SD)²
+  = 1–16% (largest for frontal L, 16%; temporal R, 12%).
+- Several lobes differ between hemispheres (frontal, occipital, limbic);
+  the occipital lobes change in opposite directions. A hemisphere-specific
+  effect of the atlas or registration is not excluded; this is not
+  interpreted as lateralised development until checked.
+- `bin10` gives the same changes (r = 0.997 across the 12 lobes).
+
+**The axes.** Shares of the spread, with bootstrap 95% intervals and the
+corrected permutation p (1,000; age trajectory removed, each feature shuffled):
+
+| axis | share | p_fwe | lobes with intervals excluding 0 |
+|---|---|---|---|
+| 1 | 17.6% (15.8–19.9) | 0.001 | frontal L/R, temporal L (+); limbic R (−) |
+| 2 | 16.1% (14.6–18.5) | 0.001 | subcortical L/R, occipital R (+); limbic L (−) |
+| 3 | 12.6% (11.5–14.0) | 0.001 | parietal L/R (+); occipital L/R, limbic L/R (−) |
+| 4–6 | 10.1%, 9.3%, 7.7% | 0.86, 1.0, 1.0 | — |
+
+- There is no dominant global axis: under the null each of 12 features
+  would carry about 8–11%. Binarisation removed the total-weight axis of D18
+  (S33), as intended.
+- **Axes 1 and 2 are nearly equal in size**, so their directions can mix:
+  split-half median |cos| 0.53 and 0.61 against a chance 95th percentile of
+  0.60 and 0.64, while axis 3 replicates (0.64 vs 0.60). The three-axis set
+  is stable (bootstrap: largest principal angle of axes 1–3, median 16°,
+  95th percentile 30°). Axes 1–3 are reported as a set; their order is not
+  interpreted. In `bin10`, where axis 1 is larger than axis 2 (18.4% vs
+  15.8%), all three replicate (0.72 / 0.70 / 0.70 vs chance ≈ 0.60).
+- Artefact checks (age-adjusted): |r| ≤ 0.10 with motion and ≤ 0.05 with
+  pre-threshold density for every axis.
+- With and without the 7: axes 1–3 |cos| 0.99 / 1.00 / 0.98 (principal
+  angles 3°, 5°, 12°). In `bin10`, the 7 infants sit at −3.8 on axis 1, but
+  the axis does not depend on them.
+
+**Size of the spread, shared vs lobe-specific (b7A).** The split of each
+lobe's spread into the part carried by the axes (diag WWᵀ) and the
+lobe-specific part (ψ) is not reliable lobe by lobe: some lobes come out
+≈ 99% shared (ψ near zero, a Heywood-type solution), and they are different
+lobes in the two runs (bin10: frontal R, temporal R, limbic L; bin10_no7:
+frontal L, parietal R, occipital R, limbic L). Only the total spread per lobe
+is interpreted.
+
+**Does the spread change with age?** The model assumes not. The SD of the
+standardised residuals in four PMA bins (< 35, 35–38, 38–41, ≥ 41 weeks),
+Brown-Forsythe test, Bonferroni over 18 tests:
+- larger below 35 weeks for frontal L (1.42 vs 0.85–1.13 later),
+  frontal R (1.36), limbic R (1.42) and axis 1 (1.52); p = 1e−5 to 0.001;
+- the same pattern, weaker, in `bin10` (frontal L 1.66);
+- preterm- and term-born infants scanned at ≥ 38 weeks have the same spread
+  (no test passes; smallest p = 0.05, occipital R).
+The young infants are mostly preterm, scanned early, with more motion; part
+of this extra spread may be scan quality (S34). An age-dependent ψ stays a
+follow-up (plan section 8), not part of this run.
+
+**Per-infant outputs** for steps 4–6: `results/bin10_no7/positions.csv`
+(all 670 infants: axis scores 1–6 and the 12 lobe z-scores from the
+training-fitted model, a train/validation flag, and a `low7` flag; steps 4–6
+drop the 7 flagged infants, per D20).
+
+Compute: ≈ 9 core-hours for step 3 (both runs).

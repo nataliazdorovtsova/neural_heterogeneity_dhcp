@@ -267,6 +267,7 @@ def main():
     fig_standardised(beta, spread_sd)
     fig_spread(np.diag(W @ W.T), psi, spread_age, n_tests)
     fig_axes(L, L_ci, share, share_ci, perm, q, len(reps))
+    fig_axes_brain(L, L_ci, share, share_ci, perm, len(reps))
     fig_significance(share, perm, split, angles, q)
 
 
@@ -376,6 +377,69 @@ def fig_axes(L, L_ci, share, share_ci, perm, q, n_boot):
              "bootstrap replicates; grey bars: interval includes 0. Shares in brackets: bootstrap "
              "95% intervals (biased upward for small axes).", fontsize=fs.NOTE_SIZE,
              color=fs.TEXT_SECONDARY, va="top")
+    fs.save_figure(fig, paths.FIGURES / "b8b_all_axes")
+
+
+def fig_axes_brain(L, L_ci, share, share_ci, perm, n_boot):
+    """b8: one row per axis above noise (corrected permutation p < 0.05): the 12
+    lobe loadings as bars, and the same loadings painted on the brain, every
+    region taking its lobe x hemisphere group's loading (12 distinct values).
+    Surfaces and the deep slice are drawn as in fig5 (make_brain_figures.py),
+    from the cached template mesh."""
+    from matplotlib.colors import Normalize
+    from scripts import make_brain_figures as mb
+    from scripts.build_bin10 import GROUP_OF
+
+    keep = [j for j in range(L.shape[1]) if perm and perm["p_fwe"][j] < 0.05]
+    lab, t2, mask, aff = mb.load_display_atlas()
+    mb.check_same_numbering(lab, aff)
+    z = np.load(paths.PROJECT / "results" / "final" / "brain_mesh.npz")   # template mesh, run-independent
+    meshes = {h: (z[f"v{h}"], z[f"f{h}"], z[f"l{h}"]) for h in "LR"}
+    k_deep = int(round(np.argwhere(np.isin(lab, [77, 78]))[:, 2].mean()))   # thalamus level
+
+    vmax = float(np.abs(L[:, keep]).max())
+    cmap, norm = fs.DIVERGING, Normalize(-vmax, vmax)
+    views = list(mb.VIEWS) + ["deep (axial)"]
+    n = len(keep)
+    H = 3.0 * n + 1.4
+    fig = plt.figure(figsize=(18, H))
+    gs = fig.add_gridspec(n, 1 + len(views), width_ratios=[2.1, 1, 1, 1, 1, 0.75],
+                          left=0.05, right=0.99, top=1 - 0.6 / H,
+                          bottom=1.15 / H, wspace=0.03, hspace=0.6)
+    for r, j in enumerate(keep):
+        excl = (L_ci[0, :, j] > 0) | (L_ci[1, :, j] < 0)
+        ax = fig.add_subplot(gs[r, 0])
+        ax.set_xlim(XPOS[0] - 0.7, XPOS[-1] + 0.7); ax.set_ylim(-1, 1)
+        fs.rounded_bars(ax, XPOS, L[:, j], width=0.8,
+                        color=[c if e else fs.NEUTRAL_GREY for c, e in zip(COL, excl)])
+        ax.errorbar(XPOS, L[:, j], yerr=[L[:, j] - L_ci[0, :, j], L_ci[1, :, j] - L[:, j]],
+                    fmt="none", ecolor=fs.TEXT_PRIMARY, elinewidth=0.8, capsize=2, zorder=4)
+        fs.reference_line(ax, 0)
+        ax.set_xticks(XPOS, SHORT, rotation=60, ha="right", fontsize=9)
+        ax.set_ylabel("loading (SD)")
+        ax.set_title(f"Axis {j + 1}: {100 * share[j]:.1f}% of the spread "
+                     f"({100 * share_ci[0, j]:.1f}-{100 * share_ci[1, j]:.1f}), "
+                     f"p = {perm['p_fwe'][j]:.3f}", fontsize=12, loc="left", pad=8)
+        group_col = mb.region_colours(L[:, j], cmap, norm, excl)     # (12, 3)
+        colours = group_col[GROUP_OF]                                 # (90, 3), AAL order
+        for c, view in enumerate(views):
+            bx = fig.add_subplot(gs[r, 1 + c])
+            if view == "deep (axial)":
+                mb.draw_deep_slice(bx, lab, t2, colours, k_deep)
+            else:
+                mb.draw_surface(bx, meshes, colours, view)
+            if r == 0:
+                pos = gs[0, 1 + c].get_position(fig)
+                fig.text(0.5 * (pos.x0 + pos.x1), pos.y1 + 0.1 / H, view, ha="center",
+                         va="bottom", fontsize=12, fontweight="bold")
+    sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    fs.horizontal_colorbar(fig, sm, [0.45, 0.6 / H, 0.3, 0.1 / H],
+                           "loading (SD): red = higher in infants high on the axis")
+    fig.text(0.05, 0.0, f"Axes above noise only (p: corrected permutation p < 0.05); all axes in b8b. "
+             f"Each region takes its lobe's loading. Error bars and light grey: 95% interval "
+             f"from {n_boot:,} bootstrap replicates\nincludes 0. Dark grey: tissue outside the 90 "
+             "AAL regions. Drawn on the UNC neonatal template; the deep slice is at the level of "
+             "the thalamus.", fontsize=fs.NOTE_SIZE, color=fs.TEXT_SECONDARY, va="top")
     fs.save_figure(fig, paths.FIGURES / "b8_axes")
 
 
