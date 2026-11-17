@@ -51,6 +51,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S34 | Binarised networks (bin10): pilot of two measures; frontal low infants | communicability averaged over 8–12% (D19); 7 orbitofrontal-low infants kept, with a without-them check |
 | S35 | Model selection on 12 lobe features | K = 1, q = 5 (q = 6 without the 7); the two-group winner's small group = poor-quality frontal networks |
 | S36 | Trajectories and the spread around them (bin10_no7 primary, D20) | frontal L rises, temporal and parietal fall (relative to other lobes); age explains 1–16% per lobe; three axes above noise (frontal vs limbic, subcortical vs limbic L, parietal vs occipital/limbic), the same with or without the 7 |
+| S37 | A spread that changes with age (D21) | one age scale for the whole spread: 1.5× wider at 30 weeks than at term (1.41–1.64); same axes; not motion; positions_scaled.csv for steps 4–6 |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -90,6 +91,9 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | bin10 step 3: 1,000 permutations, 1,000 bootstrap, 10 split-halves (both runs) | how many axes of the lobe spread are real? | three (p_fwe = 0.001 each); axes 4+ at chance (p_fwe ≥ 0.86) | S36 |
 | bin10 vs bin10_no7 axes and trajectories | do the 7 orbitofrontal-low infants drive step 3? | no: axes 1–3 \|cos\| 0.99 / 1.00 / 0.98; 30→42 changes r = 0.997 | S36 |
 | Spread vs PMA (Brown-Forsythe, 4 bins, Bonferroni) | is the spread constant with age, as the model assumes? | no for frontal L/R, limbic R and axis 1: SD 1.4–1.5× larger below 35 weeks; preterm = term at ≥ 38 weeks | S36 |
+| bin10 step 3b: CV of 39 spread models (layers 0/1/2, hinged curve, motion), q = 0–7 | does the spread change with age, and how? | yes: one shared scale (layer 1, q = 6), +122 (SE 50) over constant spread; per-axis scales and a hinged curve predict worse | S37 |
+| Scale calibration (40 simulations per truth) and 500-replicate bootstrap | is the fitted age scale real and unbiased? | null s(30) 0.89–1.07; known curve recovered (log bias ≤ 0.004); fitted s(30) = 1.52 (1.41–1.64) | S37 |
+| Young (< 37 wk) vs older axes, 1,000 random splits; motion in the scale | is the young spread a different shape, or motion? | same shape (p = 0.10 / 0.16 / 0.34); motion moves s(30) 1.52 → 1.44 | S37 |
 
 ---
 
@@ -1820,8 +1824,8 @@ Brown-Forsythe test, Bonferroni over 18 tests:
 - preterm- and term-born infants scanned at ≥ 38 weeks have the same spread
   (no test passes; smallest p = 0.05, occipital R).
 The young infants are mostly preterm, scanned early, with more motion; part
-of this extra spread may be scan quality (S34). An age-dependent ψ stays a
-follow-up (plan section 8), not part of this run.
+of this extra spread may be scan quality (S34). An age-dependent spread is
+modelled in step 3b (S37, D21).
 
 **Per-infant outputs** for steps 4–6: `results/bin10_no7/positions.csv`
 (all 670 infants: axis scores 1–6 and the 12 lobe z-scores from the
@@ -1829,3 +1833,104 @@ training-fitted model, a train/validation flag, and a `low7` flag; steps 4–6
 drop the 7 flagged infants, per D20).
 
 Compute: ≈ 9 core-hours for step 3 (both runs).
+
+## S37 A spread that changes with age (bin10 step 3b)
+
+*2026-11-17. Model `model/mfa_scale.py` (tests `scripts/test_mfa_scale.py`);
+`scripts/slurm/run_bin10_step3b.sh`: CV `scripts/run_scale_cv.py` (jobs
+4774975, 39 specifications with 4797024), selection and final fit
+`scripts/summarise_scale.py --stage select` (4797025), 500 bootstrap
+replicates `scripts/bootstrap_scale.py` (4794048), calibration
+`scripts/calibrate_scale.py` (4775003), report `--stage report`. Figure
+`b7b_spread_age_model`. Numbers: `results/bin10_no7/scale/`
+(`comparison.csv`, `selection.json`, `summary.json`). Decision: D21.*
+
+**Why.** Step 3 assumed the same spread at every age, but the residual SD
+below 35 weeks was 1.4–1.5× the SD at term (S36).
+
+**Model.** C(t) = W S(t)² Wᵀ + s₀(t)² Ψ, each log-scale curve quadratic in
+u = (t − 40)/5 and 0 at 40 weeks, N(0, 1) prior on its two coefficients.
+- Layer 0: constant spread (the step 2/3 model; the new code reproduces it,
+  held-out log density difference < 1e−11).
+- Layer 1: one scale for everything, C(t) = s(t)² C(40).
+- Layer 2: a scale per axis and one for Ψ (q + 1 curves).
+Fitted by ECME (closed-form steps for the mean, W and Ψ on the rescaled
+data; damped Newton for the scale coefficients). Every CV fold of every
+specification converged, with no decrease of the objective.
+
+**Comparison (5-fold CV, held-out log density, 562 infants; paired SE).**
+
+| model (q = 6) | total | vs layer 0 |
+|---|---|---|
+| layer 0, constant spread | −8945.6 | — |
+| **layer 1, one scale, quadratic** | **−8823.9** | **+121.7 (SE 50.0)** |
+| layer 1 + log motion in the scale (check) | −8817.3 | +128.3 (SE 48.7) |
+| layer 1, hinged curve (post hoc, see below) | −8866.0 | +79.6 (SE 29.0) |
+| layer 2, a scale per axis | −8879.2 | +66.4 (SE 34.9) |
+
+- Layer 1 gains +85 to +122 over layer 0 at every q from 0 to 7. The 1-SE
+  rule over all specifications without motion selects layer 1, q = 6
+  (q = 7 is within 1 SE; q stays 6, as in step 2).
+- Layer 2 is worse than layer 1 at every q except q = 3 (+13 there;
+  q = 6: −55, SE 20). In the
+  recovery test, layer 2 also overestimated the per-axis scales at the young
+  end, so its per-axis curves are not used.
+
+**The fitted scale** (final fit, 10 starts): g = (−0.089, 0.061);
+s = 1.76 at 28 weeks, 1.52 at 30 (bootstrap 95% band 1.41–1.64; 499 of 500
+replicates converged), 1.16 at 35, 0.97 at 44 (lowest near 43.6 weeks).
+
+**Checks.**
+- **Calibration** (40 simulated data sets per truth, the real ages, layer 1
+  q = 6). With no true age effect, s(30) = 0.99 (95% of fits 0.89–1.07) and
+  s(28) = 0.99 (0.84–1.11). With a known curve (s(30) = 1.52), the median
+  fit is 1.525 (1.41–1.63); median log bias ≤ 0.004 at 28, 30, 35 and 44
+  weeks. The fitted 1.52 is far outside what noise produces, and the method
+  is not biased when the curve is quadratic.
+- **Motion.** Log motion (z-scored) in the scale has a coefficient of 0.05
+  (5% more spread per SD of motion) at every q, and the 30-week scale drops
+  from 1.52 to 1.44 (median over folds, q = 6). The CV gain from motion is
+  small and not consistent (q = 6: +7, SE 12; other q: +14 to +24, SE 8–14).
+  Most of the age effect is not motion.
+- **Same axes when young?** The leading 3 axes of infants scanned before
+  37 weeks (n = 120) and after (n = 442) differ by principal angles of 18°,
+  28° and 46°; random splits of the same sizes give medians of 13°, 23° and
+  41° (p = 0.10, 0.16, 0.34). There is no evidence of a different shape.
+- **Do the scaled scores have a constant spread?** SD of the axis scores in
+  four PMA bins (< 35, 35–38, 38–41, ≥ 41 weeks), training infants:
+
+  | | without scaling | with the age scale |
+  |---|---|---|
+  | axis 1 | 1.57, 1.13, 0.97, 0.97 | 1.10, 1.02, 0.96, 0.99 |
+  | axis 2 | 1.40, 0.87, 0.97, 1.00 | 1.02, 0.79, 0.96, 1.03 |
+  | axis 3 | 1.25, 1.04, 1.06, 0.99 | 0.93, 0.93, 1.05, 1.02 |
+
+- **The youngest infants** (figure b7b B). Whitened by the 40-week spread,
+  the root mean square score is 1.28 (leading 6 axes) and 1.32 (the other
+  directions) in the 21 infants scanned before 32 weeks, against about 1.6
+  on the fitted curve; from 32 weeks the curve and the bins agree. The
+  leading axes and the other directions agree in every bin, which supports
+  one shared scale. A more flexible curve (log-linear from 36 weeks, with its
+  own slopes in 32–36 and below 32 weeks; added after seeing this panel)
+  predicts worse at every q (q = 6: −42 vs the quadratic, SE 26), probably
+  because it cannot bend between 36 and 45 weeks, where most infants are. The
+  quadratic is kept. The age-adjusted positions of the infants scanned
+  before 32 weeks are about 20% too small (SD 0.9 instead of 1); step 4
+  repeats its main results without them (D21).
+
+**The axes under the age scale** (eigenvectors of C(40)). Shares 16.7%,
+16.3%, 12.6%, 9.9%, 9.5%, 7.9%. Against the step 3 axes: |cos| 0.93, 0.93,
+1.00 for axes 1–3; principal angles of the 3-axis sets 2°, 3°, 7°; of the
+axes 1–2 planes 2° and 8°. Axes 1 and 2 rotate by 22° inside the same plane
+because they are almost equal in size. This is smaller than the bootstrap
+variation (largest angle of axes 1–3: median 14°, 95th percentile 22°), so
+the permutation test and the split-halves are not repeated.
+
+**Per-infant outputs** for steps 4–6:
+`results/bin10_no7/positions_scaled.csv` (all 670 infants: axis scores 1–6
+divided by the spread along each axis at the infant's own age, and the 12
+lobe z-scores divided by the lobe's SD at that age; train/validation and
+`low7` flags).
+
+Compute: ≈ 86 core-hours (bootstrap ≈ 37; the rest CV, calibration,
+selection and reports).

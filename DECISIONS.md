@@ -560,6 +560,48 @@ interpreted.
 
 ---
 
+## D21. The spread around the trajectories scales with age (one shared scale)
+
+*2026-11-17. Natalia asked for an age-dependent spread after step 3
+(2026-11-14); the model is chosen by the pre-specified rule of plan section
+4b (SUPPLEMENT S37).*
+
+**Decision.** The binarised model (`bin10_no7`, K = 1, q = 6) gets **one age
+scale for the whole spread**: C(t) = s(t)² C(40), with
+log s(t) = g₁u + g₂u², u = (t − 40)/5, so s = 1 at 40 weeks, and an N(0, 1)
+prior on g₁, g₂. Steps 4–6 use the age-adjusted positions in
+`results/bin10_no7/positions_scaled.csv` (axis scores and lobe z-scores
+divided by the spread at the infant's own age; the 7 `low7` infants are
+dropped, D20). `positions.csv` (constant spread) is kept as a check.
+
+**Why.**
+- An age scale predicts held-out infants better at every q (q = 6: +122
+  log-density units over 562 infants, SE 50). The fit gives s(30) = 1.52
+  (95% band 1.41–1.64): the spread at 30 weeks is about 1.5× the spread at
+  term.
+- A scale per axis plus one for ψ (layer 2) predicts worse (−55, SE 20), and
+  the axes are the same in infants scanned before and after 37 weeks (S37).
+  The extra spread of the young infants is spread over all directions.
+- A more flexible curve (log-linear above 36 weeks, free slopes in 32–36 and
+  below 32 weeks) predicts worse than the quadratic (−42, SE 26).
+- Head motion in the scale changes s(30) only from 1.52 to 1.44 and does not
+  predict better (+7, SE 12). Motion is not in the scale; it stays an
+  artefact check in steps 4–6.
+
+**What does not change.** The axes: axes 1–3 of C(40) are within 2°, 3° and
+7° (principal angles) of the step 3 axes, less than the bootstrap variation
+(median 14°). Axes 1 and 2 rotate by 22° inside their common plane, which is
+expected because they are almost equal in size (16.7% vs 16.3%); D20 already
+reports axes 1–3 as a set. The permutation test and split-halves of step 3
+are not repeated.
+
+**Caveat.** Below 32 weeks (21 training infants) the quadratic curve is
+higher than the observed spread (1.6 vs 1.3), so the age-adjusted positions
+of these infants are about 20% too small. Step 4 repeats its main results
+without the infants scanned before 32 weeks.
+
+---
+
 ## Open — needs a decision or an answer
 - **How to handle the per-infant global weight scale** (S29, S32). Axis 2
   ≈ total edge weight (r = 0.89). Max normalisation of clustering creates
