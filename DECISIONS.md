@@ -642,6 +642,40 @@ with yh03 before any write-up.
 
 ---
 
+## D23. Step 5b: five genetic factors instead of single scores
+
+*2026-11-18. Natalia, after the step 5 null (S39). Defined after the step 5
+results were seen; step 5 (D22) stays the pre-specified result. Committed
+before step 5b was run.*
+
+**Why.** Single polygenic scores are noisy and the 30-test family is
+large; Natalia's colleague finds PRS links with edge-level outcomes in the
+same data. A combined score per genetic factor is less noisy and needs fewer
+tests.
+
+**Decision.** Five factors, following the genomic factor model of
+Grotzinger et al. 2022 (Nat Genet), built from the D22 scores:
+
+| factor | scores |
+|---|---|
+| neurodevelopmental | `adhd2022`, `asd2019` |
+| psychotic | `scz2022`, `bip2024_noUKBB` |
+| internalising | `mdd2025_noUKBB`, `anx2024` |
+| compulsive | `ocd2024`, `an2019` |
+| substance use | `sud2023` |
+
+- Factor score = mean of the z-scored scores (z within the 411 infants),
+  z-scored again. Equal weights; no weights are estimated from our data.
+- `asd_early_2025` is not used: it would count autism twice. It was the one
+  nominal hit of step 5, so leaving it out is the conservative choice.
+- Test: the step 5 model with the factor in place of the score
+  (+ PC1–10, sex, GA at birth, PMA spline; SEs clustered by family).
+  **Primary family: 5 factors × axes 1–3 = 15 tests, BH FDR.** Lobes
+  (5 × 12, BH) secondary; sensitivity sets as in step 5.
+- Reported as a follow-up defined after a null, not as a confirmatory test.
+
+---
+
 ## Open — needs a decision or an answer
 - **How to handle the per-infant global weight scale** (S29, S32). Axis 2
   ≈ total edge weight (r = 0.89). Max normalisation of clustering creates
