@@ -55,6 +55,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S38 | What goes with the position in the spread (covariates) | at the same PMA, infants born earlier sit lower on axis 2 (β = 0.15 per 4.2 weeks, Bonferroni p = 0.003; not motion); 10 lobe links pass FDR; no deprivation index in the release |
 | S39 | Polygenic scores and the position in the spread | no association: none of the 10 pre-specified scores (D22), the positive controls or the 48 scores passes FDR; CIs exclude \|β\| > 0.24 |
 | S40 | Five genetic factors and the position in the spread (D23) | no association: 0 of 15 factor × axis tests at p < 0.05; lobes at chance |
+| S41 | Positions at birth and behaviour at 18 months | no association with CBCL or ECBQ (0 of 30 axis tests at p < 0.05; lobes at chance); CIs within ±0.17 |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -101,6 +102,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Step 4 sensitivity: + motion, training only, without < 32 weeks, constant-spread positions | do the step 4 links depend on motion, the split, the youngest infants or the age scale? | no: axis 2 – GA +0.13 to +0.15 in every set; all 10 lobe links keep sign and p < 0.05 | S38 |
 | bin10 step 5: 10 pre-specified polygenic scores × axes 1–3 (BH), all 48 (BH), lobes, score × PMA, 3 sensitivity sets | do polygenic scores go with the position in the spread? | no: smallest q = 0.85 (primary), nominal hits at chance (8 of 144) | S39 |
 | bin10 step 5b: 5 genetic factors (Grotzinger groups) × axes 1–3 (BH) and × lobes | does combining scores into factors reveal a signal? | no: smallest q = 0.70 (axes), 0.21 (lobes) | S40 |
+| bin10 step 6: 10 outcomes (CBCL, ECBQ) × axes 1–3 (BH), lobes, partial Spearman, 2 sensitivity sets | do positions at birth go with behaviour at 18 months? | no: smallest q = 0.71; rank-based 1 of 30 at p < 0.05 | S41 |
 
 ---
 
@@ -2079,3 +2081,34 @@ liability does not go with the 12-lobe relative-communicability axes at
 effects above |β| ≈ 0.23. This does not conflict with edge-level links in
 the same infants (Anchal): lobe averages of a relative, binarised measure
 can miss effects on single connections or on total connection strength.
+
+## S41 Positions at birth and behaviour at 18 months (bin10 step 6)
+
+*2026-11-18. `scripts/run_bin10_step6.py` (job 4801108, < 1 core-minute).
+Figure `b12_outcomes`. Numbers: `results/bin10_no7/step6/`.*
+
+**Sample.** Age-adjusted positions (D21, without the 7) with CBCL
+(n = 518) or ECBQ (n = 516) at about 18 months. Outcomes: the 7 CBCL
+syndrome t-scores (the file has no internalising / externalising totals)
+and the 3 ECBQ scales. CBCL t-scores are floored at 50: 32–68% of infants
+sit at the floor per scale.
+
+**Model.** outcome (z) ~ position (z) + male + GA at birth + PMA at scan +
+age at assessment; SEs clustered by family. Primary: 10 outcomes × axes
+1–3 (BH, 30 tests). Every test repeated as a partial Spearman correlation.
+No PRS–outcome analysis (no PRS–axis link in step 5).
+
+**Result: no association.**
+- Axes: no test has p < 0.05 (1.5 expected by chance); smallest q = 0.71.
+  All 95% CIs lie within ±0.17 SD per SD of position. Partial Spearman:
+  1 of 30 at p < 0.05 (anxious/depressed – axis 2, ρ = 0.10, p = 0.03),
+  smallest q = 0.72.
+- Lobes (120 tests): none passes (smallest q = 0.53; rank-based 0.71);
+  6 have p < 0.05 (6 expected).
+- Sensitivity (training only; + mother's education): the largest β stay
+  below 0.10 in every set.
+
+**Reading.** With steps 5 and 5b, the binarised 12-lobe axes go with GA at
+birth (step 4) but not with polygenic liability or with behaviour and
+temperament at 18 months. Effects larger than about 0.17 SD (outcomes) or
+0.23 SD (polygenic scores) are unlikely for this measure.
