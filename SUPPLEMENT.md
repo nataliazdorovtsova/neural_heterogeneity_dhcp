@@ -54,6 +54,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S37 | A spread that changes with age (D21) | one age scale for the whole spread: 1.5× wider at 30 weeks than at term (1.41–1.64); same axes; not motion; positions_scaled.csv for steps 4–6 |
 | S38 | What goes with the position in the spread (covariates) | at the same PMA, infants born earlier sit lower on axis 2 (β = 0.15 per 4.2 weeks, Bonferroni p = 0.003; not motion); 10 lobe links pass FDR; no deprivation index in the release |
 | S39 | Polygenic scores and the position in the spread | no association: none of the 10 pre-specified scores (D22), the positive controls or the 48 scores passes FDR; CIs exclude \|β\| > 0.24 |
+| S40 | Five genetic factors and the position in the spread (D23) | no association: 0 of 15 factor × axis tests at p < 0.05; lobes at chance |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -99,6 +100,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | bin10 step 4: 6 biological predictors × axes 1–3 (Bonferroni) and × 12 lobes (FDR), clustered SEs | which infant characteristics go with the position in the spread? | GA at birth → axis 2 (+0.15, p_bonf = 0.003); 10 of 72 lobe links | S38 |
 | Step 4 sensitivity: + motion, training only, without < 32 weeks, constant-spread positions | do the step 4 links depend on motion, the split, the youngest infants or the age scale? | no: axis 2 – GA +0.13 to +0.15 in every set; all 10 lobe links keep sign and p < 0.05 | S38 |
 | bin10 step 5: 10 pre-specified polygenic scores × axes 1–3 (BH), all 48 (BH), lobes, score × PMA, 3 sensitivity sets | do polygenic scores go with the position in the spread? | no: smallest q = 0.85 (primary), nominal hits at chance (8 of 144) | S39 |
+| bin10 step 5b: 5 genetic factors (Grotzinger groups) × axes 1–3 (BH) and × lobes | does combining scores into factors reveal a signal? | no: smallest q = 0.70 (axes), 0.21 (lobes) | S40 |
 
 ---
 
@@ -2045,3 +2047,35 @@ larger effects.
 
 **Caveats.** EUR ancestry only (411 of 663 infants). The GWAS source of
 each score is inferred from its name (D22, open item).
+
+## S40 Five genetic factors and the position in the spread (bin10 step 5b)
+
+*2026-11-18. `scripts/run_bin10_step5b.py` (job 4801105, < 1 core-minute).
+Figure `b11b_prs_factors`. Numbers: `results/bin10_no7/step5b/`. Defined in
+D23 after the step 5 null and committed before the run; a follow-up, not a
+confirmatory test.*
+
+**Factors** (Grotzinger et al. 2022 groups; equal-weight mean of z-scored
+scores): neurodevelopmental (ADHD, autism), psychotic (schizophrenia,
+bipolar), internalising (depression, anxiety), compulsive (OCD, anorexia),
+substance use. Correlation of the two scores in each factor: 0.50, 0.62,
+0.49 and −0.005 (OCD and anorexia are uncorrelated in this sample, so the
+compulsive factor is an average of two independent scores). The factors
+correlate 0.12–0.60 with each other.
+
+**Result: no association.**
+- Axes (15 tests): none passes (smallest q = 0.70); no test has p < 0.05
+  (smallest: psychotic → axis 2, β = +0.10, −0.03 to 0.23, p = 0.14). All
+  95% CIs lie within ±0.23.
+- Lobes (60 tests): none passes (smallest q = 0.21); 2 have p < 0.05 (3
+  expected): internalising → parietal L (−0.18, p = 0.004) and psychotic →
+  parietal L (−0.17, p = 0.007).
+- Sensitivity sets (term-born, PC1–5, training only): no β larger than
+  0.12 in any set.
+
+**Reading.** Combining scores did not reveal a signal hidden by noise or by
+the size of the family. With step 5, the evidence is that polygenic
+liability does not go with the 12-lobe relative-communicability axes at
+effects above |β| ≈ 0.23. This does not conflict with edge-level links in
+the same infants (Anchal): lobe averages of a relative, binarised measure
+can miss effects on single connections or on total connection strength.
