@@ -52,6 +52,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S35 | Model selection on 12 lobe features | K = 1, q = 5 (q = 6 without the 7); the two-group winner's small group = poor-quality frontal networks |
 | S36 | Trajectories and the spread around them (bin10_no7 primary, D20) | frontal L rises, temporal and parietal fall (relative to other lobes); age explains 1–16% per lobe; three axes above noise (frontal vs limbic, subcortical vs limbic L, parietal vs occipital/limbic), the same with or without the 7 |
 | S37 | A spread that changes with age (D21) | one age scale for the whole spread: 1.5× wider at 30 weeks than at term (1.41–1.64); same axes; not motion; positions_scaled.csv for steps 4–6 |
+| S38 | What goes with the position in the spread (covariates) | at the same PMA, infants born earlier sit lower on axis 2 (β = 0.15 per 4.2 weeks, Bonferroni p = 0.003; not motion); 10 lobe links pass FDR; no deprivation index in the release |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -94,6 +95,8 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | bin10 step 3b: CV of 39 spread models (layers 0/1/2, hinged curve, motion), q = 0–7 | does the spread change with age, and how? | yes: one shared scale (layer 1, q = 6), +122 (SE 50) over constant spread; per-axis scales and a hinged curve predict worse | S37 |
 | Scale calibration (40 simulations per truth) and 500-replicate bootstrap | is the fitted age scale real and unbiased? | null s(30) 0.89–1.07; known curve recovered (log bias ≤ 0.004); fitted s(30) = 1.52 (1.41–1.64) | S37 |
 | Young (< 37 wk) vs older axes, 1,000 random splits; motion in the scale | is the young spread a different shape, or motion? | same shape (p = 0.10 / 0.16 / 0.34); motion moves s(30) 1.52 → 1.44 | S37 |
+| bin10 step 4: 6 biological predictors × axes 1–3 (Bonferroni) and × 12 lobes (FDR), clustered SEs | which infant characteristics go with the position in the spread? | GA at birth → axis 2 (+0.15, p_bonf = 0.003); 10 of 72 lobe links | S38 |
+| Step 4 sensitivity: + motion, training only, without < 32 weeks, constant-spread positions | do the step 4 links depend on motion, the split, the youngest infants or the age scale? | no: axis 2 – GA +0.13 to +0.15 in every set; all 10 lobe links keep sign and p < 0.05 | S38 |
 
 ---
 
@@ -1934,3 +1937,67 @@ lobe z-scores divided by the lobe's SD at that age; train/validation and
 
 Compute: ≈ 86 core-hours (bootstrap ≈ 37; the rest CV, calibration,
 selection and reports).
+
+## S38 What goes with an infant's position in the spread (bin10 step 4)
+
+*2026-11-18. `scripts/run_bin10_step4.py` (final run job 4801085,
+< 1 core-minute). Figures `b10_covariates`, `b10b_ga_spread`
+(per-infant points, local). Numbers: `results/bin10_no7/step4/`
+(`covariates.csv`, `step4_summary.json`).*
+
+**Sample.** 663 infants (the primary set without the 7 `low7`, D20),
+training and validation together; age-adjusted positions (D21). 40
+families have two or three infants (twins, one set of triplets), so standard
+errors are clustered by family.
+
+**Model.** One regression per outcome × predictor:
+y ~ x + restricted cubic spline of PMA at scan (4 knots) + GA at birth
+(not when x is GA at birth or preterm). y is z-scored; continuous x per SD
+(GA at birth SD 4.2 weeks, head circumference SD 3.1 cm); male and preterm
+(n = 188, < 37 weeks) as differences in SD. Birth weight z for GA is
+computed within the cohort (log birth weight on a GA spline and sex).
+Radiology score 1–5 is used as a number.
+- Tested family: 6 biological predictors × axes 1–3 (Bonferroni, 18 tests)
+  and × 12 lobe z-scores (BH FDR, 72 tests).
+- Artefact checks: log motion; density before thresholding.
+- Exploratory: the mother's age at leaving full-time education (n = 633;
+  median 22, IQR 21–25). **The dHCP 2026 release has no deprivation index**
+  (enrolment, clinical-details and follow-up folders searched; the
+  clinical-details folder is empty); education is the nearest
+  socioeconomic measure, from the enrolment form (`cpenr01`).
+
+**Axes (β, 95% CI).**
+
+| | GA at birth | preterm | male | BW z | head circ. | radiology | motion | density | education |
+|---|---|---|---|---|---|---|---|---|---|
+| axis 1 | +0.03 | +0.05 | −0.20 | −0.11 | −0.23 | +0.10 | +0.01 | +0.07 | −0.01 |
+| axis 2 | **+0.15** (0.07, 0.23) | −0.23 | +0.16 | +0.03 | +0.21 | +0.00 | −0.15 | +0.01 | +0.06 |
+| axis 3 | −0.02 | −0.10 | −0.13 | +0.05 | −0.03 | +0.04 | −0.07 | −0.01 | +0.01 |
+
+- **One test passes: GA at birth and axis 2** (β = +0.15 per 4.2 weeks,
+  p = 0.0001, Bonferroni p = 0.003). At the same PMA, infants born earlier
+  sit lower on axis 2: a smaller share of communicability in the subcortical
+  and occipital lobes and a larger one in limbic L. Preterm as a yes/no is
+  in the same direction but not significant (−0.23, −0.51 to 0.05).
+- The axis 2 – GA link holds in every sensitivity set: with log motion as a
+  covariate (+0.14, Bonferroni p = 0.008), training infants only (+0.15,
+  p = 0.0008), without the 25 infants scanned before 32 weeks (+0.13,
+  p = 0.0003), and with the constant-spread positions of step 3 (+0.13,
+  p = 0.0004).
+- Nominal effects that do not pass correction: axis 1 with head
+  circumference (−0.23), male (−0.20) and birth weight z (−0.11); axis 2
+  with head circumference (+0.21) and male (+0.16); p = 0.004–0.035.
+- Artefact checks: axis 2 goes with motion (−0.15, p = 0.0005), and motion
+  goes weakly with GA at birth (r = −0.13). Motion does not explain the GA
+  link (above). Density before thresholding: |β| ≤ 0.07 for every axis.
+- Mother's education: |β| ≤ 0.06 for every axis, p ≥ 0.13.
+
+**Lobes (BH FDR < 0.05, 10 of 72).** GA at birth: parietal R −0.11, occipital
+R +0.12, limbic L −0.13 (the same pattern as axis 2). Head circumference:
+subcortical R +0.30, temporal L −0.28, parietal L −0.23. Male: limbic R
++0.22. Birth weight z: frontal R −0.12. Radiology score: frontal L +0.12.
+All ten keep their sign and p < 0.05 in every sensitivity set; with motion
+as a covariate, temporal L – GA at birth (+0.11) also passes.
+
+**Not done here.** The per-infant figure `b10b_ga_spread` stays local
+(plan section 5). Interactions (e.g. GA × PMA) were not tested.
