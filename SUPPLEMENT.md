@@ -53,6 +53,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S36 | Trajectories and the spread around them (bin10_no7 primary, D20) | frontal L rises, temporal and parietal fall (relative to other lobes); age explains 1–16% per lobe; three axes above noise (frontal vs limbic, subcortical vs limbic L, parietal vs occipital/limbic), the same with or without the 7 |
 | S37 | A spread that changes with age (D21) | one age scale for the whole spread: 1.5× wider at 30 weeks than at term (1.41–1.64); same axes; not motion; positions_scaled.csv for steps 4–6 |
 | S38 | What goes with the position in the spread (covariates) | at the same PMA, infants born earlier sit lower on axis 2 (β = 0.15 per 4.2 weeks, Bonferroni p = 0.003; not motion); 10 lobe links pass FDR; no deprivation index in the release |
+| S39 | Polygenic scores and the position in the spread | no association: none of the 10 pre-specified scores (D22), the positive controls or the 48 scores passes FDR; CIs exclude \|β\| > 0.24 |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -97,6 +98,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | Young (< 37 wk) vs older axes, 1,000 random splits; motion in the scale | is the young spread a different shape, or motion? | same shape (p = 0.10 / 0.16 / 0.34); motion moves s(30) 1.52 → 1.44 | S37 |
 | bin10 step 4: 6 biological predictors × axes 1–3 (Bonferroni) and × 12 lobes (FDR), clustered SEs | which infant characteristics go with the position in the spread? | GA at birth → axis 2 (+0.15, p_bonf = 0.003); 10 of 72 lobe links | S38 |
 | Step 4 sensitivity: + motion, training only, without < 32 weeks, constant-spread positions | do the step 4 links depend on motion, the split, the youngest infants or the age scale? | no: axis 2 – GA +0.13 to +0.15 in every set; all 10 lobe links keep sign and p < 0.05 | S38 |
+| bin10 step 5: 10 pre-specified polygenic scores × axes 1–3 (BH), all 48 (BH), lobes, score × PMA, 3 sensitivity sets | do polygenic scores go with the position in the spread? | no: smallest q = 0.85 (primary), nominal hits at chance (8 of 144) | S39 |
 
 ---
 
@@ -2001,3 +2003,45 @@ as a covariate, temporal L – GA at birth (+0.11) also passes.
 
 **Not done here.** The per-infant figure `b10b_ga_spread` stays local
 (plan section 5). Interactions (e.g. GA × PMA) were not tested.
+
+## S39 Polygenic scores and the position in the spread (bin10 step 5)
+
+*2026-11-18. `scripts/run_bin10_step5.py` (job 4801102, < 1 core-minute).
+Figure `b11_prs` (summary statistics only). Numbers:
+`results/bin10_no7/step5/` (`prs.csv`, `step5_summary.json`). Family
+pre-specified in D22 (committed before the run).*
+
+**Sample.** 411 infants with age-adjusted positions (D21, without the 7,
+D20) and polygenic scores (EUR ancestry only, D9); 26 families with twins
+or triplets, so standard errors are clustered by family. The scores and
+PCs were read in place and are not written to any output.
+
+**Model.** y ~ score (z) + PC1–10 + male + GA at birth + PMA spline, one
+score at a time; y z-scored.
+
+**Result: no association.**
+- **Primary family (10 scores × axes 1–3, 30 tests):** none passes
+  (smallest BH q = 0.85). One test has p < 0.05 (early-diagnosed autism →
+  axis 3, β = +0.10, 0.01 to 0.20, p = 0.034), against 1.5 expected by
+  chance. Every 95% CI lies within ±0.24 SD per SD of score, so effects
+  larger than about |β| = 0.24 are unlikely for these scores.
+- **Positive controls** (brain volume, ICVF, FA): no association either
+  (all p ≥ 0.06). The axes do not track the genetics of adult brain
+  structure, which makes a null for the psychiatric scores unsurprising.
+- **All 48 scores (144 tests):** none passes BH FDR; 8 have p < 0.05
+  (7.2 expected by chance).
+- **Lobes (10 primary scores × 12 lobes, 120 tests):** none passes
+  (smallest q = 0.58); 7 have p < 0.05 (6 expected).
+- **Score × PMA (exploratory):** none passes (smallest p = 0.033).
+- Sensitivity sets (term-born n = 291, PC1–5, training n = 350) give the
+  same picture; e.g. early-diagnosed autism → axis 3: β = +0.10 (main),
+  +0.11 (PC1–5), +0.14 (term-born), +0.07 (training only).
+
+**Power.** At n = 411, one test at α = 0.05 has 80% power for |r| ≈ 0.14;
+with a Bonferroni-level threshold over 30 tests it is |r| ≈ 0.19.
+Polygenic scores for psychiatric conditions typically explain < 1% of the
+variance of brain measures (|r| < 0.1), so this study can rule out only
+larger effects.
+
+**Caveats.** EUR ancestry only (411 of 663 infants). The GWAS source of
+each score is inferred from its name (D22, open item).
