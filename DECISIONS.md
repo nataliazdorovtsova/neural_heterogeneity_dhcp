@@ -602,6 +602,46 @@ without the infants scanned before 32 weeks.
 
 ---
 
+## D22. A pre-specified primary family of 10 polygenic scores
+
+*2026-11-18. Natalia, before step 5 (plan section 6).*
+
+**Decision.** The primary family for step 5 is one score per
+neurodevelopmental or psychiatric condition (30 tests: 10 scores x axes 1–3,
+BH FDR):
+
+| condition | score |
+|---|---|
+| ADHD | `adhd2022` |
+| autism | `asd2019` |
+| early-diagnosed autism | `asd_early_2025` |
+| schizophrenia | `scz2022` |
+| bipolar disorder | `bip2024_noUKBB` |
+| depression | `mdd2025_noUKBB` |
+| anxiety | `anx2024` |
+| OCD | `ocd2024` |
+| anorexia nervosa | `an2019` |
+| substance use disorder | `sud2023` |
+
+- Positive controls (reported beside the family, not in it): `volume`,
+  `ICVF`, `FA`.
+- All 48 scores are still tested and reported as exploratory (BH FDR over
+  48 x 3).
+- Left out of the family: PTSD and panic (small GWAS), the subtype and
+  difference scores (mostly repeat the main scores), the neurological
+  scores (late-life conditions), and the later releases `adhd2025` and
+  `anx2026` (source not yet confirmed; they can replace the 2022/2024 scores
+  only by a new decision before the results are seen).
+
+**Why.** One score per condition counts each condition once and keeps the
+family small (n = 411 infants; 80% power for |r| ≈ 0.14 at one test).
+
+**Open.** The GWAS behind each score is not recorded with the scores (PRS-CS,
+computed by yh03); the sources are inferred from the names. Confirm them
+with yh03 before any write-up.
+
+---
+
 ## Open — needs a decision or an answer
 - **How to handle the per-infant global weight scale** (S29, S32). Axis 2
   ≈ total edge weight (r = 0.89). Max normalisation of clustering creates
