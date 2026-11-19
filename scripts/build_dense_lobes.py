@@ -2,7 +2,11 @@
 for PLS (DECISIONS D24).
 
     NH_RUN=bin10_no7 python scripts/build_dense_lobes.py --stack S.npy \\
-        --participants participants_with_index.csv [--tag dense25]
+        --participants participants_with_index.csv [--tag dense25] [--binarise]
+
+--binarise: every retained edge = 1 (topology only; Natalia, 2026-11-19,
+"reading B", pending Duncan). On a fixed-density stack this keeps each
+infant's edge set and drops the weights. Without it: weighted edges.
 
 1. Stack (90, 90, n) of weighted networks, third axis matched to the cohort
    by session through the participants file (subject_index, session).
@@ -90,6 +94,7 @@ def main():
     ap.add_argument("--stack", required=True)
     ap.add_argument("--participants", required=True)
     ap.add_argument("--tag", default="dense25")
+    ap.add_argument("--binarise", action="store_true")
     a = ap.parse_args()
 
     coh = pd.read_csv(paths.PROJECT / "results" / "cohort" / "cohort.csv")
@@ -115,9 +120,10 @@ def main():
         n_edges[i] = (W[IU] > 0).sum()
         isolated[i] = int((W.sum(1) == 0).sum())
         total_w[i] = W[IU].sum()
-        comm[i] = communicability(W)
+        A = (W > 0).astype(float) if a.binarise else W
+        comm[i] = communicability(A)
         if i == 0:
-            assert np.allclose(communicability(3.7 * W), comm[i]), "communicability is not scale-invariant"
+            assert np.allclose(communicability(3.7 * A), comm[i]), "communicability is not scale-invariant"
     X = lobe_means(comm)
 
     prim = coh.in_primary.values.astype(bool)
@@ -138,7 +144,7 @@ def main():
     out = paths.PROJECT / "results" / "features"
     out.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(out / f"{a.tag}_comm_lobe.npz", X=X, features=GROUP_NAMES, node=comm,
-                        measure="weighted communicability (strength-normalised)", dhcp_id=coh.dhcp_id.values,
+                        measure=("binary" if a.binarise else "weighted") + " communicability (degree/strength-normalised)", dhcp_id=coh.dhcp_id.values,
                         session=coh.session.values, stack=str(a.stack))
     pos = pd.DataFrame(dict(dhcp_id=coh.dhcp_id.astype(str), split=coh.split, scan_age=t))
     for d, g in enumerate(GROUP_NAMES):
@@ -151,7 +157,7 @@ def main():
     tr = fit_rows
     sd_bins = pd.DataFrame(Zs[tr]).groupby(pd.cut(t[tr], PMA_BINS, right=False), observed=False).std()
     summ = dict(
-        stack=str(a.stack), n_sessions=int(p.sum()),
+        stack=str(a.stack), binarise=a.binarise, n_sessions=int(p.sum()),
         edges=dict(min=int(np.nanmin(n_edges[p])), max=int(np.nanmax(n_edges[p])),
                    median=float(np.nanmedian(n_edges[p]))),
         density_median=float(np.nanmedian(n_edges[p]) / len(IU[0])),
