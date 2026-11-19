@@ -676,6 +676,47 @@ Grotzinger et al. 2022 (Nat Genet), built from the D22 scores:
 
 ---
 
+## D24. Partial least squares (PLS) on denser weighted networks (Duncan)
+
+*2026-11-19. Natalia and Duncan, after steps 5, 5b and 6 were null. Replaces
+a draft on segregation and triple-network measures, which was withdrawn
+before it was committed or run.*
+
+**Why.** The bin10 axes go with GA at birth but not with polygenic scores or
+18-month behaviour. Duncan: keep the 12 lobes and one interpretable
+measure, use the denser connectomes, and look at the covariance between
+blocks with PLS instead of many single tests.
+
+**Decision.**
+- **Networks:** Anchal's rethresholded connectomes, about 25% dense, when
+  ready. These are probably the fixed-density rebuild asked for in D4 (top
+  25% of possible edges per distance bin + MST); Natalia confirms with
+  Anchal.
+- **Features:** weighted nodal communicability (Crofts–Higham,
+  strength-normalised, `features.communicability`; invariant to a global
+  rescaling of each infant's weights), averaged into the 12 lobe ×
+  hemisphere groups, then age-adjusted as in D21. These values go into PLS
+  directly (no factor model); the age trajectories are descriptive.
+- **Method:** PLS correlation (McIntosh & Lobaugh 2004), `model/pls.py`.
+  Both blocks are residualised on covariates and z-scored. 10,000
+  family-block permutations (twins move as a pair), with deflation for
+  LV ≥ 2. 10,000 family bootstraps, sign-matched (Procrustes alignment was
+  mis-calibrated in simulation, S42). Replication: saliences from the
+  training infants, latent correlation in the validation infants.
+- **PLS 1:** 12 lobes × **one polygenic score per condition** (12 scores:
+  ADHD, autism, anorexia, anxiety, bipolar, insomnia, depression, OCD,
+  panic, PTSD, schizophrenia, substance use; the D22 choice where D22 has
+  one). Covariates: PC1–10, sex, GA at birth, PMA spline. Sensitivity: the
+  27 psychiatric / neurodevelopmental scores; all 48.
+- **PLS 2:** 12 lobes × the 7 CBCL syndrome scales + 3 ECBQ scales (infants
+  with all 10). Covariates: sex, GA at birth, PMA spline, age at each
+  assessment. Sensitivity: ranks (CBCL floor).
+- A significant LV is one with permutation p < 0.05; only those LVs are
+  interpreted, through bootstrap ratios (|BSR| ≥ 2.58) and structure
+  correlations.
+
+---
+
 ## Open — needs a decision or an answer
 - **How to handle the per-infant global weight scale** (S29, S32). Axis 2
   ≈ total edge weight (r = 0.89). Max normalisation of clustering creates

@@ -56,6 +56,7 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | S39 | Polygenic scores and the position in the spread | no association: none of the 10 pre-specified scores (D22), the positive controls or the 48 scores passes FDR; CIs exclude \|β\| > 0.24 |
 | S40 | Five genetic factors and the position in the spread (D23) | no association: 0 of 15 factor × axis tests at p < 0.05; lobes at chance |
 | S41 | Positions at birth and behaviour at 18 months | no association with CBCL or ECBQ (0 of 30 axis tests at p < 0.05; lobes at chance); CIs within ±0.17 |
+| S42 | PLS code check on the binarised lobe values (D24) | method passes 5 simulation checks; on the bin10 features no LV is significant for polygenic scores or behaviour (smallest p = 0.17) |
 
 **Tests at a glance** — every check run on the model and its outputs:
 
@@ -103,6 +104,9 @@ Unless stated otherwise, statistics are computed on the **training set only**
 | bin10 step 5: 10 pre-specified polygenic scores × axes 1–3 (BH), all 48 (BH), lobes, score × PMA, 3 sensitivity sets | do polygenic scores go with the position in the spread? | no: smallest q = 0.85 (primary), nominal hits at chance (8 of 144) | S39 |
 | bin10 step 5b: 5 genetic factors (Grotzinger groups) × axes 1–3 (BH) and × lobes | does combining scores into factors reveal a signal? | no: smallest q = 0.70 (axes), 0.21 (lobes) | S40 |
 | bin10 step 6: 10 outcomes (CBCL, ECBQ) × axes 1–3 (BH), lobes, partial Spearman, 2 sensitivity sets | do positions at birth go with behaviour at 18 months? | no: smallest q = 0.71; rank-based 1 of 30 at p < 0.05 | S41 |
+| PLS simulation: planted LV, null calibration, LV2 after a real LV1 | does the PLS permutation test work? | planted LV found; false-positive rate 5.5% (LV1), 4.5% (LV2, deflated) | S42 |
+| PLS bootstrap SE vs true sampling SD (3 alignments) | are bootstrap ratios calibrated? | sign matching 1.01–1.09; Procrustes 0.00–0.65 (rejected) | S42 |
+| PLS code check, bin10 features (4 analyses, 10,000 permutations) | do lobe values covary with PRS or behaviour? | no LV significant (smallest p = 0.17); none replicates | S42 |
 
 ---
 
@@ -2112,3 +2116,43 @@ No PRS–outcome analysis (no PRS–axis link in step 5).
 birth (step 4) but not with polygenic liability or with behaviour and
 temperament at 18 months. Effects larger than about 0.17 SD (outcomes) or
 0.23 SD (polygenic scores) are unlikely for this measure.
+
+## S42 PLS code check on the binarised lobe values (D24)
+
+*2026-11-19. `model/pls.py`, `scripts/run_pls.py` (job 4804446, 2 minutes),
+checks `scripts/check_pls.py` (4804445) and `scripts/check_pls_bootstrap.py`
+(4804414). Numbers: `results/bin10_no7/pls/`. A code check on the bin10
+features, before Anchal's denser connectomes arrive (D24); it is the fourth
+look at these lobe values.*
+
+**Method checks (simulation, twin families).**
+1. Planted LV (lobes 0–2 with items 0–3): found, with the planted
+   variables as the stable ones.
+2. No signal: LV1 p < 0.05 in 5.5% of 200 datasets.
+3. One real LV: LV2 p < 0.05 in 4.5%. The undeflated test (compare s₂ with
+   the second permuted singular value) was anti-conservative here (LV2
+   p = 0.001 for pure noise), so LVs ≥ 2 are tested after deflation.
+4. A 12 × 10 block: bootstrap ratios finite. Procrustes alignment fitted to
+   V alone is exact when V is square, so the bootstrap SD is 0 (ratios
+   ~10¹⁵ in the first full run).
+5. Bootstrap SD / true sampling SD (400 fresh datasets): sign matching
+   1.01–1.09; Procrustes on U and V stacked 0.56–0.65; on V alone 0.00 for
+   the square block. Sign matching is used.
+
+**Result on bin10 features: no significant LV.**
+
+| analysis | n | Y block | LV1 covariance share | LV1 p | validation r (p) |
+|---|---|---|---|---|---|
+| PRS, one per condition (main) | 411 | 12 | 46% | 0.18 | 0.09 (0.26) |
+| PRS, 27 psychiatric | 411 | 27 | 40% | 0.17 | 0.04 (0.40) |
+| PRS, all 48 | 411 | 48 | 28% | 0.52 | −0.03 (0.57) |
+| behaviour | 515 | 10 | 33% | 0.76 | −0.11 (0.84) |
+| behaviour, ranks | 515 | 10 | 34% | 0.78 | −0.09 (0.79) |
+
+No LV in any analysis has p < 0.05. LV1 saliences are not interpreted.
+
+**Reading.** As steps 5, 5b and 6: the binarised lobe values do not covary
+with polygenic scores or 18-month behaviour, also when the tests are pooled
+into one latent variable. The pipeline is ready for the denser weighted
+networks.
+
