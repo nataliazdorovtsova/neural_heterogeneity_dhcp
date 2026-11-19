@@ -715,6 +715,28 @@ blocks with PLS instead of many single tests.
   interpreted, through bootstrap ratios (|BSR| ≥ 2.58) and structure
   correlations.
 
+**Addendum, 2026-11-19 (before Anchal's stack arrived; no result seen on it).**
+- **Edges: weighted** (Duncan: "more information"). Natalia had first leaned
+  to binary edges for topology; binarised, density-controlled analyses may
+  follow later. `build_dense_lobes.py --binarise` is kept for that.
+- **Age adjustment for PLS (Natalia):** direct lobe z-scores, not the factor
+  model's, so the factor model stays simple. Spread model chosen by
+  held-out log predictive density over M0 (constant), M1 (one age scale
+  shared by the lobes, as D21) and M2 (one per lobe), 5 family-grouped
+  folds, one-SE rule (`scripts/compare_age_spread.py`). On the bin10 values
+  M1 won (M0 −54.8, SE 31.1; M2 −27.8, SE 10.2; s(30)/s(40) = 1.52, as D21);
+  its z-scores correlate r ≥ 0.977 with the factor-model z-scores.
+- **Twins kept together (Natalia):** the shared cohort (D3) splits 9 of 41
+  multi-infant families between training and validation and 21 across
+  folds. Run `w25` gets its own cohort (`scripts/make_family_cohort.py`):
+  the minimum moves (9 infants between training and validation, 26 between
+  folds) put each family on one side and in one fold. The shared cohort and
+  the earlier runs are unchanged.
+- **Run `w25`** (paths.RUNS): the whole pipeline again on Anchal's
+  fixed-density rebuild (steps 1–6, figures), then the two PLS analyses.
+  The D20 seven stay excluded (`results/w25/excluded_infants.csv`); the
+  builder reports their values on the new stack.
+
 ---
 
 ## Open — needs a decision or an answer

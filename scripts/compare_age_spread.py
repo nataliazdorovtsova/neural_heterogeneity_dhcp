@@ -96,34 +96,39 @@ def family_folds(fam, k=5, seed=0):
     return np.array([f_of[f] for f in fam])
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--features", default="bin10_comm_avg_lobe")
-    ap.add_argument("--positions", default="positions_scaled.csv")
-    a = ap.parse_args()
-    coh = pd.read_csv(paths.PROJECT / "results" / "cohort" / "cohort.csv")
-    X = np.load(paths.PROJECT / "results" / "features" / f"{a.features}.npz")["X"]
-    low7 = set(pd.read_csv(paths.EXCLUDE).dhcp_id.astype(str)) if paths.EXCLUDE.exists() else set()
-    keep = (coh.in_primary & (coh.split == "train") & ~coh.dhcp_id.astype(str).isin(low7)).values
-    c, Xt = coh[keep].reset_index(drop=True), X[keep]
-    Xt = (Xt - Xt.mean(0)) / Xt.std(0)            # units only; does not change the comparison
-    t = c.scan_age.values
-    fold = family_folds(c.dhcp_id.str[:7].values)
-
-    lpd = {m: np.empty(len(c)) for m in MODELS}
-    for f in range(5):
+def select(Xt, t, fam, k=5):
+    """Held-out comparison of M0/M1/M2 (family folds). Xt standardised lobe
+    values (n, D), t PMA, fam family ids. Returns (summary dict, chosen)."""
+    fold = family_folds(fam, k)
+    lpd = {m: np.empty(len(t)) for m in MODELS}
+    for f in range(k):
         tr, te = fold != f, fold == f
         for m in MODELS:
             _, logpdf, _ = fit(Xt[tr], t[tr], m)
             lpd[m][te] = logpdf(Xt[te], t[te])
     tot = {m: float(lpd[m].sum()) for m in MODELS}
     best = max(tot, key=tot.get)
-    diff = {m: dict(vs_best=round(tot[m] - tot[best], 1),
-                    se=round(float(np.std(lpd[m] - lpd[best], ddof=1) * np.sqrt(len(c))), 1)) for m in MODELS}
+    se = lambda a, b: round(float(np.std(lpd[a] - lpd[b], ddof=1) * np.sqrt(len(t))), 1)
+    diff = {m: dict(vs_best=round(tot[m] - tot[best], 1), se=se(m, best)) for m in MODELS}
     chosen = next(m for m in MODELS if tot[best] - tot[m] <= diff[m]["se"])
-    pairs = {f"{m1}-{m2}": dict(diff=round(tot[m2] - tot[m1], 1),
-                                se=round(float(np.std(lpd[m2] - lpd[m1], ddof=1) * np.sqrt(len(c))), 1))
-             for m1, m2 in (("M0", "M1"), ("M1", "M2"), ("M0", "M2"))}
+    pairs = {f"{a}-{b}": dict(diff=round(tot[b] - tot[a], 1), se=se(b, a))
+             for a, b in (("M0", "M1"), ("M1", "M2"), ("M0", "M2"))}
+    return dict(heldout_lpd=tot, vs_best=diff, pairwise=pairs, best=best, chosen_one_se=chosen), chosen
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--features", default="bin10_comm_avg_lobe")
+    ap.add_argument("--positions", default="positions_scaled.csv")
+    a = ap.parse_args()
+    coh = pd.read_csv(paths.RESULTS / "cohort" / "cohort.csv")
+    X = np.load(paths.PROJECT / "results" / "features" / f"{a.features}.npz")["X"]
+    low7 = set(pd.read_csv(paths.EXCLUDE).dhcp_id.astype(str)) if paths.EXCLUDE.exists() else set()
+    keep = (coh.in_primary & (coh.split == "train") & ~coh.dhcp_id.astype(str).isin(low7)).values
+    c, Xt = coh[keep].reset_index(drop=True), X[keep]
+    Xt = (Xt - Xt.mean(0)) / Xt.std(0)            # units only; does not change the comparison
+    t = c.scan_age.values
+    sel, _ = select(Xt, t, c.dhcp_id.str[:7].values)
 
     zs, info = {}, {}
     for m in MODELS:
@@ -132,18 +137,18 @@ def main():
     corr = {f"{m1}-{m2}": round(float(np.min([np.corrcoef(zs[m1][:, d], zs[m2][:, d])[0, 1]
                                              for d in range(12)])), 3)
             for m1, m2 in (("M0", "M1"), ("M1", "M2"), ("M0", "M2"))}
-    pos = pd.read_csv(paths.RESULTS / a.positions)
-    pos["dhcp_id"] = pos.dhcp_id.astype(str)
-    zf = c[["dhcp_id"]].astype(str).merge(pos, on="dhcp_id", how="left")[[f"z_{g}" for g in GROUP_NAMES]].values
-    ok = ~np.isnan(zf).any(1)
-    corr_factor = {m: dict(min=round(float(np.min([np.corrcoef(zs[m][ok, d], zf[ok, d])[0, 1] for d in range(12)])), 3),
-                           median=round(float(np.median([np.corrcoef(zs[m][ok, d], zf[ok, d])[0, 1]
-                                                         for d in range(12)])), 3)) for m in MODELS}
-    out = dict(features=a.features, n=int(len(c)), n_families=int(len(np.unique(c.dhcp_id.str[:7]))),
-               heldout_lpd=tot, vs_best=diff, pairwise=pairs, best=best, chosen_one_se=chosen,
+    out = dict(features=a.features, n=int(len(c)), n_families=int(len(np.unique(c.dhcp_id.str[:7]))), **sel,
                shared_scale_g=info["M1"]["g"],
                sd_ratio_30_vs_40_M1=round(float(np.exp(-2 * info["M1"]["g"][0] + 4 * info["M1"]["g"][1])), 3),
-               min_lobe_corr_between_models=corr, corr_with_factor_model_z=corr_factor)
+               min_lobe_corr_between_models=corr)
+    if (paths.RESULTS / a.positions).exists():
+        pos = pd.read_csv(paths.RESULTS / a.positions)
+        pos["dhcp_id"] = pos.dhcp_id.astype(str)
+        zf = c[["dhcp_id"]].astype(str).merge(pos, on="dhcp_id", how="left")[[f"z_{g}" for g in GROUP_NAMES]].values
+        ok = ~np.isnan(zf).any(1)
+        r = lambda m: [np.corrcoef(zs[m][ok, d], zf[ok, d])[0, 1] for d in range(12)]
+        out["corr_with_factor_model_z"] = {m: dict(min=round(float(np.min(r(m))), 3),
+                                                   median=round(float(np.median(r(m))), 3)) for m in MODELS}
     (paths.RESULTS / f"age_spread_{a.features}.json").write_text(json.dumps(out, indent=2))
     print(json.dumps(out, indent=1))
 

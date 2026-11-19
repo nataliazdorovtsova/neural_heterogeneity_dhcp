@@ -1,12 +1,11 @@
 """Weighted lobe communicability on a dense connectome stack, age-adjusted
 for PLS (DECISIONS D24).
 
-    NH_RUN=bin10_no7 python scripts/build_dense_lobes.py --stack S.npy \\
-        --participants participants_with_index.csv [--tag dense25] [--binarise]
+    NH_RUN=w25 python scripts/build_dense_lobes.py --stack S.npy \\
+        --participants participants_with_index.csv [--tag w25] [--binarise]
 
---binarise: every retained edge = 1 (topology only; Natalia, 2026-11-19,
-"reading B", pending Duncan). On a fixed-density stack this keeps each
-infant's edge set and drops the weights. Without it: weighted edges.
+Weighted edges (Duncan, 2026-11-19). --binarise (every retained edge = 1,
+topology only) is kept as an option for a later analysis.
 
 1. Stack (90, 90, n) of weighted networks, third axis matched to the cohort
    by session through the participants file (subject_index, session).
@@ -14,13 +13,13 @@ infant's edge set and drops the weights. Without it: weighted edges.
    Higham 2009; features.communicability). It is invariant to a global
    rescaling of an infant's weights (checked below). Regions are averaged
    into the 12 lobe x hemisphere groups (build_bin10.lobe_means).
-3. Age adjustment, per lobe, in the primary infants (cohort.in_primary),
-   fitted in the training infants without the D20 seven:
-       mean   = restricted cubic spline in PMA (4 knots, training 5/35/65/95th
-                percentiles)
-       log SD = quadratic in u = (PMA - 40) / 5          (as D21)
-   by maximum likelihood (Gaussian). z = (x - mean(PMA)) / SD(PMA) for all
-   primary infants.
+3. Age adjustment, fitted in the training infants without the D20 seven
+   (scripts/compare_age_spread.py): a restricted cubic spline mean in PMA
+   per lobe, and a log SD of M0 (constant), M1 (one age scale shared by the
+   12 lobes, as D21) or M2 (one per lobe). The model is chosen by held-out
+   log predictive density (5 family-grouped folds), with the one-SE rule
+   (Natalia, 2026-11-19; M1 on the bin10 values). z = (x - mean(PMA)) /
+   SD(PMA) for all primary infants.
 
 Checks printed: edge count and density per session and their correlation
 with PMA; isolated nodes; scale invariance; age correlation of the raw and
@@ -37,7 +36,6 @@ import json
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
 
 import paths
 from features import communicability
@@ -61,34 +59,6 @@ def rcs_basis(x, k):
     return np.column_stack(cols)
 
 
-def scale_basis(t):
-    u = (np.asarray(t, float) - 40) / 5
-    return np.column_stack([np.ones_like(u), u, u ** 2])
-
-
-def fit_location_scale(y, B, Z):
-    """Gaussian ML: y ~ N(B beta, exp(Z gamma)^2)."""
-    beta0 = np.linalg.lstsq(B, y, rcond=None)[0]
-    r = y - B @ beta0
-    g0 = np.linalg.lstsq(Z, np.log(np.abs(r) + 1e-12) + 0.635, rcond=None)[0]   # E log|N(0,1)| = -0.635
-
-    def nll(th):
-        b, g = th[:B.shape[1]], th[B.shape[1]:]
-        ls = Z @ g
-        return np.sum(ls + 0.5 * ((y - B @ b) * np.exp(-ls)) ** 2)
-
-    def grad(th):
-        b, g = th[:B.shape[1]], th[B.shape[1]:]
-        ls = Z @ g
-        w = np.exp(-2 * ls)
-        e = y - B @ b
-        return np.r_[-(B.T @ (e * w)), Z.T @ (1 - e ** 2 * w)]
-
-    res = minimize(nll, np.r_[beta0, g0], jac=grad, method="L-BFGS-B")
-    assert res.success, res.message
-    return res.x[:B.shape[1]], res.x[B.shape[1]:]
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stack", required=True)
@@ -97,7 +67,7 @@ def main():
     ap.add_argument("--binarise", action="store_true")
     a = ap.parse_args()
 
-    coh = pd.read_csv(paths.PROJECT / "results" / "cohort" / "cohort.csv")
+    coh = pd.read_csv(paths.RESULTS / "cohort" / "cohort.csv")
     part = pd.read_csv(a.participants)
     S = np.load(a.stack, mmap_mode="r")
     assert S.shape[:2] == (N, N) and S.shape[2] == len(part), (S.shape, len(part))
@@ -131,15 +101,16 @@ def main():
     is_low7 = coh.dhcp_id.astype(str).isin(low7).values
     fit_rows = prim & (coh.split == "train").values & ~is_low7
     t = coh.scan_age.values
-    k = rcs_knots(t[fit_rows])
-    B, Z = rcs_basis(t, k), scale_basis(t)
+    from scripts.compare_age_spread import select, fit as fit_spread
+    Xf = X[fit_rows]
+    mu, sd = Xf.mean(0), Xf.std(0)
+    sel, chosen = select((Xf - mu) / sd, t[fit_rows], coh.dhcp_id.astype(str)[fit_rows].str[:7].values)
+    zfun, _, info = fit_spread((Xf - mu) / sd, t[fit_rows], chosen)
     Zs = np.full_like(X, np.nan)
-    params = {}
-    for d, g in enumerate(GROUP_NAMES):
-        b, gm = fit_location_scale(X[fit_rows, d], B[fit_rows], Z[fit_rows])
-        Zs[:, d] = (X[:, d] - B @ b) / np.exp(Z @ gm)
-        params[g] = dict(beta=b.round(6).tolist(), log_sd=gm.round(4).tolist(),
-                         sd_ratio_30_to_40=float(np.exp(gm[1] * -2 + gm[2] * 4)))
+    ok = ~np.isnan(X).any(1)
+    Zs[ok] = zfun((X[ok] - mu) / sd, t[ok])
+    params = dict(chosen=chosen, **sel, shared_g=info["g"])
+    B = rcs_basis(t, rcs_knots(t[fit_rows]))      # PMA spline for the total-weight check
 
     out = paths.PROJECT / "results" / "features"
     out.mkdir(parents=True, exist_ok=True)
@@ -179,6 +150,7 @@ def main():
         age_model=params)
     (paths.RESULTS / f"positions_{a.tag}_summary.json").write_text(json.dumps(summ, indent=2, default=float))
     print(json.dumps({k: v for k, v in summ.items() if k != "age_model"}, indent=1, default=float))
+    print("age model:", json.dumps({k: params[k] for k in ("chosen", "vs_best", "shared_g")}, default=float))
 
 
 if __name__ == "__main__":

@@ -22,7 +22,9 @@ DATA = PROJECT / "data"
 RUNS = {"v1": "perbin25_mst",          # Onnela clustering, per-infant max normalisation
         "d18": "perbin25_mst_cl",      # clustering with one normaliser for every infant
         "bin10": "bin10_comm_avg_lobe",       # D19: binarised, communicability, 12 lobes
-        "bin10_no7": "bin10_comm_avg_lobe"}   # D19 check: without the 7 orbitofrontal-low infants
+        "bin10_no7": "bin10_comm_avg_lobe",   # D19 check: without the 7 orbitofrontal-low infants
+        "w25": "w25_comm_lobe"}               # D24: weighted communicability, Anchal's fixed-density
+                                              # rebuild, 12 lobes; own family-grouped cohort
 RUN = os.environ.get("NH_RUN", "v1")
 if RUN not in RUNS:
     raise ValueError(f"NH_RUN={RUN!r}: expected one of {sorted(RUNS)}")
