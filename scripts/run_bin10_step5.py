@@ -51,8 +51,8 @@ NAMES = {"adhd2022": "ADHD", "asd2019": "autism", "asd_early_2025": "autism, ear
          "volume": "brain volume", "ICVF": "neurite density (ICVF)", "FA": "FA"}
 
 
-def load():
-    d = load_data("positions_scaled.csv")
+def load(positions="positions_scaled.csv"):
+    d = load_data(positions)
     prs = pd.read_csv(paths.PRS)
     prs["dhcp_id"] = prs.participant_id.astype(str).str.replace("sub-", "", regex=False)
     scores = [c for c in prs.columns if c not in ("participant_id", "dhcp_id")]

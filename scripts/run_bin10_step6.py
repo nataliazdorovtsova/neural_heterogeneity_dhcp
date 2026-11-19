@@ -42,8 +42,8 @@ LABEL["aggressive_behavior_t"] = "aggressive behaviour"
 LABEL["emotional_reactive_t"] = "emotionally reactive"
 
 
-def load():
-    d = load_data("positions_scaled.csv")
+def load(positions="positions_scaled.csv"):
+    d = load_data(positions)
     out = []
     for f, cols in ((paths.CBCL, CBCL), (paths.ECBQ, ECBQ)):
         o = pd.read_csv(f)

@@ -5,8 +5,10 @@ method.
     NH_RUN=bin10_no7 python scripts/run_pls.py [--positions positions_scaled.csv]
                                                [--n-perm 10000] [--n-boot 10000]
 
-Lobe block: the 12 age-adjusted lobe z-scores (positions file, D21), entered
-directly (no factor model).
+Lobe block: the 12 age-adjusted lobe z-scores of a positions file, entered
+directly (no factor model): positions_scaled.csv (bin10, D21; code check,
+S42) or positions_<tag>.csv from scripts/build_dense_lobes.py (D24).
+Output: results/<run>/pls/ for positions_scaled.csv, else pls_<tag>/.
 
 PLS 1, polygenic scores (n = 411, EUR ancestry, D9):
   prs_condition  main: one score per condition (12; Natalia, 2026-11-19).
@@ -107,17 +109,19 @@ def main():
     ap.add_argument("--n-perm", type=int, default=10_000)
     ap.add_argument("--n-boot", type=int, default=10_000)
     a = ap.parse_args()
+    global OUT
+    if a.positions != "positions_scaled.csv":
+        OUT = paths.RESULTS / ("pls_" + a.positions.removeprefix("positions_").removesuffix(".csv"))
     OUT.mkdir(parents=True, exist_ok=True)
-    assert a.positions == "positions_scaled.csv", "load() helpers read positions_scaled.csv"
 
-    d, scores = load_prs()
+    d, scores = load_prs(a.positions)
     psych = [s for s in scores if s not in NEURO + BRAIN]
     assert set(PER_CONDITION) <= set(psych) and len(psych) == 27
     out = [run_one("prs_condition", d, PER_CONDITION, prs_covariates, False, a.n_perm, a.n_boot),
            run_one("prs_psych", d, psych, prs_covariates, False, a.n_perm, a.n_boot),
            run_one("prs_all48", d, scores, prs_covariates, False, a.n_perm, a.n_boot)]
 
-    b = load_behaviour()
+    b = load_behaviour(a.positions)
     b = b.dropna(subset=CBCL + ECBQ + LOBES + ["age_cbcl_clean", "age_ecbq_clean", "ga_birth", "scan_age"])
     b = b.reset_index(drop=True)
     for name, rank in (("behaviour", False), ("behaviour_rank", True)):
